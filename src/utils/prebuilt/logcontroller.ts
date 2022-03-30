@@ -1,12 +1,12 @@
-import { WebsocketController } from "../../controllers/websocket";
-import { checkPerms } from "../../iam/prechecks";
-import { BaseRoute } from "../../routing";
-import { assertStructure, DurableResource, JResponse, ResourceSession } from ".."
+import { WebsocketController } from "../../controllers/websocketcontroller";
+import { BaseMap, GetMap, PostMap } from "../../routing";
+import { assertStructure } from ".."
+import { Session } from "../../io/input";
 
 /**
  * A prebuilt durable object offering live and delayed WebSocket logging
  */
-@BaseRoute("/logs")
+@BaseMap("/logs")
 export class LogsDurableObject extends WebsocketController {
 
     constructor(state: any, env: any) {
@@ -15,18 +15,18 @@ export class LogsDurableObject extends WebsocketController {
         
     // Connect to the websocket for the endpoint
     @GetMap("")
-    async queryLogs(){
+    async queryLogs(session: Session){
         // Check request structure
-        return this.getUpgrade()
+        return this.assertUpgrade(session)
     }
 
     // Creates log entry for the given sitename
     @PostMap("")
-    async addLog(){
+    async addLog(session: Session){
         // Assert that we have a loggroup
         assertStructure(this.EVENT, {loggroup: n=>true, messages: n=>typeof n === "object"})
         // Get key from storage
-        let old_data = await this.storage.get(this.EVENT.body.loggroup) || []
+        let old_data = await this.storage.get(session.request.json.loggroup) || []
         // Append list of new objects to key
         old_data = old_data.concat(this.EVENT.body.messages);
         console.log(old_data)
@@ -35,11 +35,11 @@ export class LogsDurableObject extends WebsocketController {
         // Publish updated list to broadcast
         this.broadcast(old_data);
         // Set the response
-        return new JResponse(200, "success", {message: "Log entry added"});
+        return {message: "Log entry added"};
     }
 
     messageHandler(message: string | ArrayBuffer): void {
-        // Add history functionality
+        // Add history retrieve functionality
         this.broadcast(message)
     }
 

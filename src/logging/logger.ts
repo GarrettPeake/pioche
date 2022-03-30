@@ -1,19 +1,19 @@
-import { env } from 'TODO WHERE DO WE IMPORT ENV FROM'
-
 /**
  * Class to interact with logging DO to enable websocket logs
  */
- export class Logger{
+export class Logger{
 
     live: boolean;
     queue: object[] = [];
-    sessionid: string;
+    groupingid: string;
     lastts: number;
+    env: any;
     
-    constructor(session: ClientSession, live: boolean = true){
+    constructor(groupingid: string, live: boolean = true){
         this.live = live;
-        this.sessionid = session.sessionid;
+        this.groupingid = groupingid;
         this.lastts = Date.now();
+        this.env = globalThis.env;
     }
 
     async log(info: any){
@@ -36,18 +36,14 @@ import { env } from 'TODO WHERE DO WE IMPORT ENV FROM'
     }
 
     async _post(messages: object[]){
-        let id = env.LOGS.idFromName("logserver");
-        let storage = env.LOGS.get(id);
-        await storage.fetch("https://dummy-url", {
+        // Generate a request that will get properly routed on the other end
+        let id = globalThis.env.LOGS.idFromName("logserver");
+        let logserver = globalThis.env.LOGS.get(id);
+        await logserver.fetch("https://www.dummy-url.com/logs", {
             method: "POST",
             body: JSON.stringify({
-                sitename: this.EVENT.sitename, // This is routing information since this request will be handled like all the rest
-                endpoint: "logs",
-                method: "POST",
-                body: JSON.stringify({
-                    sessionid: this.sessionid,
-                    messages: messages
-                })
+                groupingid: this.groupingid,
+                messages: messages
             })
         });
     }

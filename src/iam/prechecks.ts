@@ -1,5 +1,5 @@
+import { Session } from "../io/input";
 import { PermissionedObject } from "../types";
-import { JResponse, WorkerRequest } from "../utils";
 
 /** TODO: Convert to decorator
  * Authorize an action using permissioning
@@ -8,19 +8,17 @@ import { JResponse, WorkerRequest } from "../utils";
  * @returns A non-auth response or the result of the action
  */
 export async function assertPerms(session: Session, authobj){
-    if(!checkPerms(session, 'TODO'))
-        throw Error("403");
+    console.log('TODO: assertPerms Function not implement')
 }
 
 /**
  * Scrape permissioned data from an object 
- * @param event The event object
+ * @param session The requests session object
  * @param permmedobj An object with a data an permissions mask
  * @returns A copy of the object with data requiring higher perms removed
  */
-export async function maskPerms(event: WorkerRequest, permmedobj: PermissionedObject){
-    let r_obj = {...permmedobj.data}; // Copy the object
-    let perms = {...permmedobj.mask}; // Copy the permissions mask
+export async function maskPerms(session: Session, permmedobj: PermissionedObject){
+    console.log('TODO: maskperms Function not implement')
 }
 
 /**
@@ -31,17 +29,5 @@ export async function maskPerms(event: WorkerRequest, permmedobj: PermissionedOb
  * @returns boolean whether check passed
  */
 export function checkPerms(event, requirements){
-    requirements = ["ifficient", "owner", "internal"].concat(requirements);
-    for(var req of requirements){
-        if(typeof req === 'object'){
-            var sat = true;
-            for(var subreq of req)
-                if(!event.permissions.includes(subreq))
-                    sat = false;
-            if(sat)
-                return sat;
-        } else if(event.permissions.includes(req))
-            return true;
-    }
-    return false
+    console.log('TODO: checkPerms Function not implement')
 }

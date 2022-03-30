@@ -1,18 +1,19 @@
-import { DurableObjectController } from "../../controllers/durableobject";
+import { DurableObjectController } from "../../controllers/durableobjectcontroller";
+import { Session } from "../../io/input";
+import { BaseMap, GetMap } from "../../routing";
 
 @BaseMap("/identity")
 export class DiscordAuth extends DurableObjectController{
 
-
     @GetMap("/identity/discord")
-    async handle_redirect(session: ClientSession){
+    async handle_redirect(session: Session){
         // requires (code: string)
         // Request authorization token using authorization code
         let payload:any = {
-            'client_id': ENV.DISCORD_ID,
-            'client_secret': ENV.DISCORD_KEY,
+            'client_id': this.env.DISCORD_ID,
+            'client_secret': this.env.DISCORD_KEY,
             'grant_type': 'authorization_code',
-            'code': code,
+            'code': session.request.query.code,
             'redirect_uri': 'http://www.ifficient.tech/redirect'
         }
         let headers:any = {
@@ -23,7 +24,7 @@ export class DiscordAuth extends DurableObjectController{
             body: JSON.stringify(payload),
             headers: headers
         }).then(data => data.json()).then(async (resp:any) => {
-            session.log(`Received token response: ${JSON.stringify(resp)}`)
+            session.logger.log(`Received token response: ${JSON.stringify(resp)}`)
             if(resp.hasOwnProperty('access_token')){
                 headers = {
                     'authorization': `${resp.token_type} ${resp.access_token}`
@@ -32,18 +33,18 @@ export class DiscordAuth extends DurableObjectController{
                     method: "GET",
                     headers: headers
                 }).then(data2 => data2.json()).then((subresp:any) => {
-                    session.log(`Received identity response: ${JSON.stringify(subresp)}`);
+                    session.logger.log(`Received identity response: ${JSON.stringify(subresp)}`);
                     if(subresp.hasOwnProperty('username') && subresp.hasOwnProperty('discriminator') && subresp.hasOwnProperty('email')){
                         let username:string = `${subresp.username}#${subresp.discriminator}`
                         // upsertUser(username, '', subresp.email); TODO Fix upsertUser
                         return `User ${username} has been created`
                     }
                     else
-                        return new JResponse(403, "fail", {message: 'Discord identity request rejected'})
-                }).catch(()=>{ return new JResponse(500, 'error', {message: 'Unable to contact Discord'}); });
+                        return {code: 403, body: {message: 'Discord identity request rejected'}};
+                }).catch(()=>{return {code: 500, body: {message: 'Unable to contact Discord'}}});
             } else {
-                return new JResponse(403, 'fail', {message: 'Discord OAuth code rejected'});
+                return {code: 403, body: {message: 'Discord identity request rejected'}};
             }
-        }).catch(()=> new JResponse(500, 'error', {message: 'Unable to contact Discord'}) );
+        }).catch(()=> {return {code: 500, body: {message: 'Unable to contact Discord'}}});
     }
 }

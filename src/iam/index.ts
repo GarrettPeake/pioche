@@ -1,9 +1,10 @@
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
-import { DurableObjectController } from "../controllers/durableobject";
+import { DurableObjectController } from "../controllers/durableobjectcontroller";
+import { Session } from '../io/input';
 
 export class OAuthController extends DurableObjectController{
-    // TODO: Implement
+    
 }
 
 /**
@@ -11,10 +12,10 @@ export class OAuthController extends DurableObjectController{
  */
  export const JWT = {
     sign: (message: object) => {
-        return jwt.sign(message, ENV.JWT_KEY)
+        return jwt.sign(message, globalThis.env.JWT_KEY)
     },
     verify: (token: string) => {
-        return jwt.verify(token, ENV.JWT_KEY)
+        return jwt.verify(token, globalThis.env.JWT_KEY)
     },
     read: (token: string) => {
         return jwt.decode(token)
@@ -25,9 +26,14 @@ export class OAuthController extends DurableObjectController{
 }
 
 export class Client{
+    
     roles: string[];
     perms: string[];
     internal: number;
     name: string;
     ttl: number;
+
+    constructor(request: Request){
+
+    }
 }
