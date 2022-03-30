@@ -1,5 +1,5 @@
-import { JResponse, Logger, ResourceSession } from "../utils/helpers";
-import { DurableObjectResource } from "./durableobject";
+import { JResponse, Logger, ResourceSession } from "../utils";
+import { DurableObjectController } from "./durableobject";
 
 
 /**
@@ -7,7 +7,7 @@ import { DurableObjectResource } from "./durableobject";
  * websockets, this functions as a local portal through which
  * the worker can interact with the remote durable object
  */
-export abstract class DurableObjectWebsocketResource extends DurableObjectResource{
+export abstract class WebsocketController extends DurableObjectController {
 
     sessions: ResourceSession[] = [];
 
@@ -51,8 +51,8 @@ export abstract class DurableObjectWebsocketResource extends DurableObjectResour
     // Gets an upgrade response for the given websocket
     async getUpgrade(){
         // Check request structure
-        if (this.EVENT.headers["upgrade"] !== "websocket")
-            return new JResponse(426, "fail", {message: "Must provide Upgrade header with value 'websocket'"});
+        if (session.headers["upgrade"] !== "websocket")
+            return {code: 426, message: "Must provide Upgrade header with value 'websocket'"};
         // Give the user a websocket
         let pair = new WebSocketPair();
         await this.handleSession(pair[1]);

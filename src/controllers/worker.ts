@@ -1,12 +1,12 @@
-import { JResponse, Logger, WorkerRequest } from "../utils/helpers";
-import { Resource } from "./resource";
+import { JResponse, Logger, WorkerRequest } from "../utils";
+import { Controller } from "./controller";
 
 /**
  * Extension of the resource class for items which require
  * no data consistency, solely local processing
  * these resources can only use KV storage
  */
-export abstract class WorkerResource extends Resource{
+export abstract class WorkerController extends Controller{
 
     // KV Namespaces are added as instance variables
 

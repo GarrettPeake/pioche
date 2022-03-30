@@ -9,3 +9,12 @@ export function LiveLogs(enabled: boolean){
         target.liveLogging = enabled;
     }
 }
+
+/** TODO: Implement as session level pointer
+ * Function decorator telling the containing controller
+ * which durable object to send the logs to based on the session
+ * if Durable Object logging is enabled
+ */
+export function LogTarget(){
+    return function(target: any, ) {}
+}

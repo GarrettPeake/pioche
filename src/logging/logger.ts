@@ -1,37 +1,33 @@
-import { WorkerRequest } from "../utils/helpers";
+import { env } from 'TODO WHERE DO WE IMPORT ENV FROM'
 
 /**
  * Class to interact with logging DO to enable websocket logs
  */
  export class Logger{
 
-    afterpost: boolean;
+    live: boolean;
     queue: object[] = [];
-    EVENT: WorkerRequest;
-    ENV: any;
-    loggroup: string;
+    sessionid: string;
     lastts: number;
     
-    constructor(event: WorkerRequest, env: any, loggroup: string, afterpost: boolean = true){
-        this.afterpost = afterpost;
-        this.EVENT = event;
-        this.ENV = env;
-        this.loggroup = loggroup;
+    constructor(session: ClientSession, live: boolean = true){
+        this.live = live;
+        this.sessionid = session.sessionid;
         this.lastts = Date.now();
     }
 
     async log(info: any){
-        if(this.afterpost){
-            console.log(info);
-            this._queue(info);
-        } else {
+        if(this.live){
             console.log(info);
             this._post([info]);
+        } else {
+            console.log(info);
+            this._queue(info);
         }
     }
 
     async close(){
-        if(this.afterpost)
+        if(!this.live)
             this._post(this.queue);
     }
 
@@ -40,16 +36,16 @@ import { WorkerRequest } from "../utils/helpers";
     }
 
     async _post(messages: object[]){
-        let id = this.ENV.LOGS.idFromName(this.EVENT.sitename);
-        let storage = this.ENV.LOGS.get(id);
+        let id = env.LOGS.idFromName("logserver");
+        let storage = env.LOGS.get(id);
         await storage.fetch("https://dummy-url", {
             method: "POST",
             body: JSON.stringify({
-                sitename: this.EVENT.sitename,
+                sitename: this.EVENT.sitename, // This is routing information since this request will be handled like all the rest
                 endpoint: "logs",
                 method: "POST",
                 body: JSON.stringify({
-                    loggroup: this.loggroup,
+                    sessionid: this.sessionid,
                     messages: messages
                 })
             })

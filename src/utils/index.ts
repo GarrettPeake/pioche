@@ -1,5 +1,5 @@
-import { assertAuth, PermissionedObject, preAuth } from "../auth/prechecks";
-import { User } from "../auth/utils";
+import { assertAuth, PermissionedObject, preAuth } from "../iam/prechecks";
+import { User } from "../iam/utils";
 import { Logger } from "../logging/logger";
 import { HTTPMethod, Methods } from "../routing/utils";
 
@@ -113,59 +113,6 @@ export class DurableResource{
         });
     }
 
-}
-
-/**
- * Response class implementing JSend standard
- */
-export class JResponse{
-
-    code: number;
-    status: string;
-    data: Object;
-    headers: Object;
-    preflight: boolean;
-
-    constructor(code=500, status='error', data={}, headers={}, preflight=false){
-        this.code = code;
-        this.status = status;
-        this.data = data;
-        this.headers = headers;
-        this.preflight = preflight;
-    }
-
-    /**
-     * Provides a unified Response structure based on the JSend standard
-     * @returns formatted Response object
-     */
-    format(){
-        let headers = {
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE',
-            'Allow': '*',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Expose-Headers': '*',
-            ... this.headers
-        }
-        if(!this.preflight)
-            return new Response(JSON.stringify({status: this.status, data: this.data}), {
-                    headers: headers as any,
-                    status: this.code as any,
-            });
-        return new Response(null, {
-            headers: headers as any,
-        });
-    }
-
-    toString(){
-        return JSON.stringify({
-            code: this.code,
-            status: this.status,
-            data: this.data,
-            headers: this.headers,
-            preflight: this.preflight
-        });
-    }
 }
 
 /**

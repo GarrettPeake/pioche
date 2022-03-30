@@ -1,21 +1,15 @@
-import { JResponse, WorkerRequest } from "../utils/helpers";
+import { PermissionedObject } from "../types";
+import { JResponse, WorkerRequest } from "../utils";
 
-export interface PermissionedObject{
-    data: any;
-    mask: any;
-}
-
-/**
+/** TODO: Convert to decorator
  * Authorize an action using permissioning
- * @param event The event object
+ * @param event A session object
  * @param authobj An object representing permissions required for the action
- * @param func The action to perform given that the authorization is validated
  * @returns A non-auth response or the result of the action
  */
-export async function preAuth(event: WorkerRequest, authobj, func){
-    if(!checkPerms(event, 'TODO'))
-        return new JResponse(403, "fail", {message: "Higher permissions required"});
-    return func();
+export async function assertPerms(session: Session, authobj){
+    if(!checkPerms(session, 'TODO'))
+        throw Error("403");
 }
 
 /**
@@ -24,7 +18,7 @@ export async function preAuth(event: WorkerRequest, authobj, func){
  * @param permmedobj An object with a data an permissions mask
  * @returns A copy of the object with data requiring higher perms removed
  */
-export async function assertAuth(event: WorkerRequest, permmedobj: PermissionedObject){
+export async function maskPerms(event: WorkerRequest, permmedobj: PermissionedObject){
     let r_obj = {...permmedobj.data}; // Copy the object
     let perms = {...permmedobj.mask}; // Copy the permissions mask
 }

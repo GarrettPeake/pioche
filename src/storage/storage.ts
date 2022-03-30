@@ -4,58 +4,116 @@
  * Superclass for interacting with storage elements
  */
 abstract class StorageElement{
+    
+    element: any = undefined;
 
-    abstract ELEMENT: any;
-    abstract namespaces: string[]; // List of KV namespaces to be initialized  TODO: this is not extensible to mongo or sql or whatever
+    constructor(element: string | KVNamespace | DurableObjectStorage){
+        this.element = element;
+    }
 
-    /**
-     * Retrieves the stored element
-     * @param getOptions Additional options passed to the storage get command
-     * Cost: 1x read
-     */
-    abstract retrieve(chain: any[], getOptions: any): Promise<any>;
+    //============== GET FUNCTIONALITIES ============================
+    // storage.get(key, options?)
+    abstract get(
+        key: string | string[],
+        options: {
+            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions
+        }): {value: any, metadata: object}
 
-    /**
-     * Assigns the end-of-chain location to the given value
-     * The type of the value is retained for subsequenty accesses
-     * TODO: use metadata in KV
-     * @param value The value to place in storage
-     * @param getOptions Additional ptions passed to the storage get command
-     * @param putOptions Additional ptions passed to the storage put command
-     * Cost: 
-     *  Top-level: 1x write
-     *  Sub-item: 1x read + 1x write
-     */
-    abstract assign(chain: any[], value: any, getOptions: any, putOptions: any): Promise<boolean>;
+    // storage.c1.c2.get(options?)
+    abstract chainGet(
+        chain: any[],
+        options: {
+            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions
+        }): {value: any, metadata: object}
 
-    /**
-     * Deletes a whole object or single key of an object in memory
-     * @param options Deletion options
-     * Cost: 
-     *  Top-level: 1x delete
-     *  Sub-item: 1x read + 1x write
-     */
-     abstract remove(chain: any[], putOptions: any, getOptions: any): Promise<boolean | void>;
 
-    /**
-     * Gets all keys at a certain chain in storage
-     * @param args Additional options passed to the storage list command
-     * Cost: Top-Level = 1x List, Sub-item = 1x read
-     */
-    abstract keys(chain: any[], listOptions: any, getOptions: any): Promise<string[]>;
+    //============== PUT FUNCTIONALITIES ============================
+    // If null generate a UUID and return it
+    abstract put(
+        key: string | null,
+        value: any,
+        options: {
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): boolean
 
-    /**
-     * Allows the user to get all keys and values at a chain as an object
-     * @param args Additional options passed to the storage list command
-     * Cost:
-     *  Top-Level:
-     *      DO: 1x list
-     *      KV: 1x list + Nx reads
-     *  Sub-item:
-     *      DO: 1x read
-     *      KV: 1x read
-     */
-    abstract entries(chain: any[], listOptions: any, getOptions: any): Promise<any[][]>;
+    // storage.c1.c2.put(object, options?)
+    // storage.c1.c2 = value: any;
+    abstract chainPut(
+        chain: string[],
+        value: any,
+        options: {
+            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): boolean; // Performs set, not spread
+
+    // storage.c1.c2.spread(object, options?)
+    abstract chainSpread(
+        chain: string[],
+        value: object,
+        options: {
+            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): any; // Performs a {...newvals} and returns result
+
+
+    //============== DELETE FUNCTIONALITIES ============================
+    // storage.delete(key, options?)
+    abstract delete(
+        key: string | string[],
+        options: {
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): boolean
+
+    // storage.c1.c2.delete(key?, options?)
+    // delete storage.c1.c2
+    abstract chainDelete(
+        chain: string[],
+        options: {
+            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): boolean
+
+    // storage.deleteAll(options?)
+    abstract deleteAllKeys(
+        options: {
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): boolean
+
+    // storage.c1.c2.deleteAll(options?)
+    abstract chainDeleteAllKeys(
+        chain: string[],
+        options: {
+            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
+            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
+        }): boolean
+
+
+    //============== KEYS FUNCTIONALITIES ============================
+    // storage.keys(options?) If options is not provided, call the separate list() method, not list(null)
+    abstract keys(
+        options: {
+            listOptions: KVNamespaceListOptions | DurableObjectListOptions
+        }): {keys: string[], cursor: string, complete: boolean}
+    // storage.c1.c2.keys(options?)
+    abstract chainKeys(
+        chain: string[],
+        options: {
+            listOptions: KVNamespaceListOptions | DurableObjectListOptions
+        }): {keys: string[], cursor: string, complete: boolean}
+
+
+    //============== ITEMS FUNCTIONALITIES ============================
+    // storage.items(options?)
+    abstract items(
+        options: {
+            listOptions: KVNamespaceListOptions | DurableObjectListOptions
+        }): {keys: string[], cursor: string, complete: boolean}
+    // storage.c1.c2.items(options?)
+    abstract chainItems(
+        chain: string[],
+        options: {
+            listOptions: KVNamespaceListOptions | DurableObjectListOptions
+        }): {keys: string[], cursor: string, complete: boolean}
 }
 
 function createStorageProxy(element: any){
