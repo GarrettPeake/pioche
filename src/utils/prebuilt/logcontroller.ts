@@ -24,11 +24,11 @@ export class LogsDurableObject extends WebsocketController {
     @PostMap("")
     async addLog(session: Session){
         // Assert that we have a loggroup
-        assertStructure(this.EVENT, {loggroup: n=>true, messages: n=>typeof n === "object"})
+        assertStructure(session.request, {groupingid: ()=>true, messages: n=>typeof n === "object"})
         // Get key from storage
-        let old_data = await this.storage.get(session.request.json.loggroup) || []
+        let old_data: object[] = await this.storage.get(session.request.json.groupingid) || []
         // Append list of new objects to key
-        old_data = old_data.concat(this.EVENT.body.messages);
+        old_data = old_data.concat(session.request.json.body.messages);
         console.log(old_data)
         // Write key back to storage
         await this.storage.put(this.EVENT.body.loggroup, old_data)
@@ -40,10 +40,10 @@ export class LogsDurableObject extends WebsocketController {
 
     messageHandler(message: string | ArrayBuffer): void {
         // Add history retrieve functionality
-        this.broadcast(message)
+        // We don't want to broadcast messages from users
     }
 
     receiveBroadcast(message: string): boolean {
-        return true
+        return false
     }
 }

@@ -1,10 +1,17 @@
+
+// Describes the format of a message
+type message = {
+    timestamp: number,
+    data: any
+}
+
 /**
  * Class to interact with logging DO to enable websocket logs
  */
 export class Logger{
 
     live: boolean;
-    queue: object[] = [];
+    queue: message[] = [];
     groupingid: string;
     lastts: number;
     env: any;
@@ -35,7 +42,7 @@ export class Logger{
         this.queue.push({timestamp: Math.max(this.lastts++, Date.now()), data: info});
     }
 
-    async _post(messages: object[]){
+    async _post(messages: message[]){
         // Generate a request that will get properly routed on the other end
         let id = globalThis.env.LOGS.idFromName("logserver");
         let logserver = globalThis.env.LOGS.get(id);

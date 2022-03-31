@@ -29,6 +29,14 @@ export class Session{
     }
 
     /**
+     * Pass through logging information to logger
+     * @param info Info to be logged
+     */
+    async log(info: any){
+        this.logger.log(info)
+    }
+
+    /**
      * Authorizes a function to run based on a set of requirements
      * returns a failure Response if authorization fails
      * @param requirements A list of requirements for the action

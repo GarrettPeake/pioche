@@ -1,5 +1,5 @@
 import { WorkerController } from "../controllers/workercontroller";
-import { endware, HTTPMethod, middleware } from "../types";
+import { endware, HTTPMethod, middleware, routing } from "../types";
 import { Session } from "../io/input";
 
 /**
@@ -7,7 +7,7 @@ import { Session } from "../io/input";
  */
 export class Router{
 
-    static routes: [HTTPMethod, string, WorkerController, string][]; // Method, route, Resource, propertyKey
+    static routes: routing[]; // Method, host, map, Resource, propertyKey
 
     static useBefore(middleware: middleware){}
 
@@ -22,7 +22,7 @@ export class Router{
         
     }
 
-    route(session: Session): any{
+    static route(session: Session): any{
         // Parsed the url to discover the matching target
 
         // Check whether the target is a durable object

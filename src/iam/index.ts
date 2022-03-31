@@ -1,7 +1,6 @@
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
-import { Session } from '../io/input';
 
 export class OAuthController extends DurableObjectController{
     

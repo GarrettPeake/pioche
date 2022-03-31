@@ -2,13 +2,28 @@
 
 /**
  * Attempt to convert anything to a response
- * Objects with reserved keys: code, body, headers, websocket will be transformed into the corresponding response
+ * Objects with reserved keys: status, statusText, body, headers, webSocket will be transformed into the corresponding response
  * Responses will not be transformed
  * Any type of other data will be placed in the body with a 200 code
  * @param data Any type of data, will then try to convert to a response
  */
-function responseFactory(data: any){
-    console.log('Response factory is under construction!')
+function responseFactory(data: any): Response{
+    // Check for response object
+    if(data instanceof Response){
+        return (data as Response)
+    }
+
+    // Check for object shaped response
+    let {status, statusText, body, headers, webSocket} = data
+    if(status || statusText || body || headers || webSocket){ // We have a object shaped response
+        return new Response( // Options will be destructured correctly in the constructor
+            typeof body === 'object' ? JSON.stringify(body) : String(body),
+            data
+        )
+    }
+
+    // Format a correct response
+    return new Response( typeof data === 'object' ? JSON.stringify(data) : String(data))
 }
 
 /**

@@ -1,9 +1,9 @@
+import { Session } from "../../io/input";
 import { Logger } from "../../logging/logger";
 
-export function easyPreflight(session: ClientSession, next: any){
-    let logger = new Logger(session)
-    if(session.method === "OPTIONS"){
-        logger.log("EXECUTING PREFLIGHT RESPONSE")
+export function easyPreflight(session: Session, next: any){
+    if(session.request.method === "OPTIONS"){
+        session.logger.log("EXECUTING PREFLIGHT RESPONSE")
         let headers = {
             'Access-Control-Allow-Headers': '*',
             'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE',
