@@ -1,8 +1,28 @@
-import { HTTPMethod } from "../types";
+import { WorkerController } from "../controllers/workercontroller";
+import { HTTPMethod, Routing } from "../types";
+
+function assertRouteFormat(route: string){
+    if(route[0] !== '/') // Ensure route begins with a slash
+        throw Error(`Mapping '${route}' invalid, routes must begin with '/'`)
+    // if(route[route.length - 1] === '/') // TODO: maybe follow Flask's rules?
+    //    throw Error(`Route '${route}' invalid, all routes must begin with '/'`)
+    if(/\s/g.test(route))
+        throw Error(`Mapping '${route}' invalid, routes may not contain whitespace`)
+    return route // Return route if nothing's wrong
+}
 
 function Route(method: HTTPMethod, route: string) { // Decorator Factory for put mappings
-    return function (target: any, propertyKey: string) {
-        target.constructor.routes.push(["GET", route, ]);
+    return function (target: WorkerController, propertyKey: string) {
+        let newRoute: Routing = {
+            method: method, 
+            route: assertRouteFormat(route),
+            controller: target,
+            propertyKey
+        };
+        if((target.constructor as any).routes)
+            (target.constructor as any).routes.push(newRoute);
+        else
+            (target.constructor as any).routes = [newRoute];
     };
 }
 
@@ -11,10 +31,14 @@ function Route(method: HTTPMethod, route: string) { // Decorator Factory for put
  * @param base Base route for all methods within the controller
  * @param host Optional route declaration for implementing subdomain routing
  */
- export function BaseMap(base: string, {host = ""} = {}) { // Decorator Factory for class base mappings
-    // TODO: clean base route for /'s randomly
+export function BaseMap(base: string, {host = ""} = {}) { // Decorator Factory for class base mappings
     return function (target: any) {
-        target.baseMapping = base;
+        if(target.routes)
+            target.routes.forEach((route: Routing) => {
+                route.host = host
+                route.route = assertRouteFormat(base) + route.route
+                console.log(`Route ${route.method} ${route.host}.domain.tld${route.route} -> ${route.controller}.${route.propertyKey}`)
+            })
     };
 }
 

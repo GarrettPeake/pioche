@@ -35,7 +35,7 @@ export abstract class DurableObjectController extends WorkerController{
         session.logger.log(`------- EVENT RECEIVED AT ${this.state.id} DURABLE OBJECT -------`);
         
         // Execute the method on the DO and save the response
-        let r_val: Response = await this[session.request.target](session);
+        let r_val: Response = await this[session.request.target](session, session);
         
         // Log exit of DO
         session.logger.log(`-------   END OF EXECUTION AT DURABLE OBJECT   -------`);

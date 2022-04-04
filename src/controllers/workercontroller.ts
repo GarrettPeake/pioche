@@ -1,4 +1,3 @@
-import { routing } from "../types";
 
 /**
  * Abstract superclass for the different types of resources
@@ -6,7 +5,6 @@ import { routing } from "../types";
  */
 export abstract class WorkerController{
 
-    static routes: [routing][] = []; // All routes advertised by the given resource
     liveLogging: boolean = false; // Whether to post each log as they come in
     env: any = {}; // Set by fetch functions on each host
 

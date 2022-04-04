@@ -119,7 +119,7 @@ abstract class StorageElement{
 function createStorageProxy(element: any){
     var handler = {
         chain: [],
-        resolve(target: any, func: string){
+        resolve(target: any, func: string){ // Generate a passthrough function appending the chain
             let currChain = [...this.chain]
             let result = (...args: any) => target[func](currChain, ...args);
             this.chain = []
