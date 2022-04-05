@@ -2,6 +2,7 @@ import { WorkerController } from "../controllers/workercontroller";
 import { HTTPMethod, Routing } from "../types";
 
 function assertRouteFormat(route: string){
+    // @tsndr router uses r.url.split('/').filter(i => i) rather than enforces '/' rules, doesn't account for dir/file tho
     if(route[0] !== '/') // Ensure route begins with a slash
         throw Error(`Mapping '${route}' invalid, routes must begin with '/'`)
     // if(route[route.length - 1] === '/') // TODO: maybe follow Flask's rules?

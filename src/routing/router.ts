@@ -2,6 +2,7 @@ import { WorkerController } from "../controllers/workercontroller";
 import { Endware, HTTPMethod, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
+import { pathToRegexp, match, parse, compile } from "path-to-regexp";
 
 /**
  * A router class implementing path-to-regexp
@@ -35,7 +36,12 @@ export class Router{
 
     static route(session: Session): any{
         // Find the registered route matching the session
-
+        for(const route of this.routes){
+            if([route.method, 'ANY'].includes(session.request.method)){
+                let regex = pathToRegexp(route.method + route.host + route.route)
+                if(regex.exec(session.request.method + session.request.host + session.request.pathname))
+            }
+        }
         // Enact all middleware on the request
         
         // Route the request

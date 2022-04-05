@@ -1,7 +1,7 @@
 import { Client } from "../iam";
 import { assertPerms, maskPerms } from "../iam/prechecks";
 import { Logger } from "../logging/logger";
-import { PermissionedObject } from "../types";
+import { HTTPMethod, PermissionedObject } from "../types";
 import { assertStructure } from "../utils";
 
 
@@ -66,51 +66,49 @@ export class Session{
 
 class InboundRequest {
 
-    // Always parse immediately
-    request = undefined;
-    method = undefined;
-    url = undefined;
-    pathname = undefined;
+    request: Request = undefined;
+    method: HTTPMethod = undefined;
+    url: URL = undefined;
+    host: string = undefined;
+    pathname: string = undefined;
+    params: object = undefined;
+    query: object = undefined;
+    headers: Headers = undefined;
+    body: string | object = undefined;
+    json: object = undefined;
 
-    // Lazily parsed as needed
-    cparams = undefined;
-    cquery = undefined;
-    cheaders = undefined;
-    cbody = undefined;
-    cjson = undefined;
+    constructor(){
+        return this;
+    }
 
-    constructor(request: Request){
-        let reqUrl = new URL(String(request.url));
+    async parse(request: Request){
         this.request = request
-        this.method = request.method.toUpperCase()
-        this.url = reqUrl
-        this.pathname = reqUrl.pathname
+        this.method = (request.method.toUpperCase() as HTTPMethod)
+        this.url = new URL(String(request.url));
+        this.host = this.url.hostname
+        this.pathname = this.url.pathname
+        this.headers = request.headers; // TODO: Do I want to parse this more? Only non serializable thing we track
+        if (['POST', 'PUT', 'PATCH'].includes(this.method)) {
+            if (request.headers.has('Content-Type') && request.headers.get('Content-Type').includes('json')) {
+                try {
+                    this.json = await request.json();
+                    this.body = this.json;
+                } catch {
+                    this.json = {}
+                }
+            } else {
+                try {
+                    this.body = await request.text()
+                } catch {
+                    this.body = ''
+                }
+            }
+        }
     }
 
-    get params(){
-        let rval = this.cparams || undefined; // TODO: Implement generation
-        this.cparams = rval
-        return rval
-    }
-    get query(){
-        let rval = this.cquery || undefined; // TODO: Implement generation
-        this.cquery = rval
-        return rval
-    }
-    get headers(){
-        let rval = this.cheaders || undefined; // TODO: Implement generation
-        this.cheaders = rval
-        return rval
-    }
-    get body(){
-        let rval = this.cbody || undefined; // TODO: Implement generation
-        this.cbody = rval
-        return rval
-    }
-    get json(){
-        let rval = this.cjson || undefined; // TODO: Implement generation
-        this.cjson = rval
-        return rval
+    async createTargetRequest(target: string): Promise<Request>{
+        return new Request('')
+        // Wrap the original body in JSON and add a params key and a target key
     }
 }
 
