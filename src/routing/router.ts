@@ -1,5 +1,5 @@
 import { WorkerController } from "../controllers/workercontroller";
-import { Endware, HTTPMethod, Middleware, Routing } from "../types";
+import { Endware, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
 import { pathToRegexp, match, parse, compile } from "path-to-regexp";
@@ -36,25 +36,35 @@ export class Router{
 
     static route(session: Session): any{
         // Find the registered route matching the session
+        let targetRoute: Routing;
         for(const route of this.routes){
             if([route.method, 'ANY'].includes(session.request.method)){
-                let regex = pathToRegexp(route.method + route.host + route.route)
-                if(regex.exec(session.request.method + session.request.host + session.request.pathname))
+                let params = [];
+                let regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step? 
+                let parsed = regex.exec(session.request.host + session.request.pathname);
+                if(parsed){
+                    session.request.params = params;
+                    targetRoute = route;
+                }
             }
         }
         // Enact all middleware on the request
         
         // Route the request
         let response: Response = undefined;
-        if(route.controller instanceof DurableObjectController){ // Check if we're routing to a D/O
-            let remoteObject = globalThis.env[route.DOBinding].get(/** Call DOTarget function here */);
-            // TODO: How to attach intent and params to the request
+        // Check if we're routing to a D/O
+        if(targetRoute.controller instanceof DurableObjectController){
+            // Call the function which generates our DO target
+            let targetDO = targetRoute.controller[targetRoute.DOBinding](session, session);
+            // TODO: Call the correct generation function
+            let remoteObject = globalThis.env[targetRoute.DOBinding].get(targetDO);
             // Pass the request to the Durable Object
-            response = remoteObject.fetch("https://dummy-url", {method: "POST", body: JSON.stringify(session)});
+            response = remoteObject.fetch(session.request.createTargetRequest(targetRoute.propertyKey));
         } else {
-            let targetController = new route.controller.constructor();
-            response = targetController[route.method](session, session)
+            let targetController = new targetRoute.controller.constructor();
+            response = targetController[targetRoute.method](session, session)
         }
         // Enact all endware on the response
+        return response
     }
 }

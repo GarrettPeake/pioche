@@ -42,7 +42,7 @@ export class Session{
      * @param requirements A list of requirements for the action
      * @param funct A function to execute and return if the authorization succeeds
      */
-     async assertPerms(requirements: any, funct: () => Response | Promise<Response>){
+    async assertPerms(requirements: any, funct: () => Response | Promise<Response>){
         return assertPerms(this, requirements);
     }
 
@@ -82,11 +82,13 @@ class InboundRequest {
     }
 
     async parse(request: Request){
+        // TODO: Ensure that this is not a duplicated request
         this.request = request
         this.method = (request.method.toUpperCase() as HTTPMethod)
         this.url = new URL(String(request.url));
         this.host = this.url.hostname
         this.pathname = this.url.pathname
+        this.query = Object.fromEntries(new URLSearchParams(this.url.search))
         this.headers = request.headers; // TODO: Do I want to parse this more? Only non serializable thing we track
         if (['POST', 'PUT', 'PATCH'].includes(this.method)) {
             if (request.headers.has('Content-Type') && request.headers.get('Content-Type').includes('json')) {
@@ -95,6 +97,7 @@ class InboundRequest {
                     this.body = this.json;
                 } catch {
                     this.json = {}
+                    this.body = ''
                 }
             } else {
                 try {
@@ -106,9 +109,20 @@ class InboundRequest {
         }
     }
 
+    /**
+     * Create a request to forward the currently executing request to the correct durable object
+     * @param target The target function to be called within the durable object
+     * @returns A request object to be executed
+     */
     async createTargetRequest(target: string): Promise<Request>{
-        return new Request('')
-        // Wrap the original body in JSON and add a params key and a target key
+        return new Request(this.url.toString(), {
+            headers: this.headers,
+            body: JSON.stringify({
+                originalContent: this.body,
+                params: this.params,
+                target: target
+            })
+        })
     }
 }
 
