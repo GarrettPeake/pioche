@@ -1,4 +1,4 @@
-import { generateSession } from '../io/input';
+import { Session } from '../io/input';
 import { Logger } from '../logging/logger';
 import { Router } from './router';
 // TODO: use config to export all of the controllers
@@ -11,11 +11,8 @@ export default{
      * @returns A promise containing a response
      */
     async fetch(request: Request, env: any) {
-        let session = generateSession(request)
-        let logger = new Logger(session); // Initialize a logger
-        logger.log('REQUEST RECEIVED');
-        logger.log(session.printout()); // Log parsed event
-        logger.log('BEGIN EXECUTION');
+        let session = new Session(request)
+        session.logger.log('REQUEST RECEIVED');
 
         // Make the environment available to the entire framework
         globalThis.env = env;
@@ -25,6 +22,6 @@ export default{
         // TODO: Remember to handle preflights 'easyPreflight'
         
         // Route request
-        return router.route(session)
+        return Router.route(session)
     }
 }

@@ -15,11 +15,11 @@ export class Router{
     static endware: Endware[] = [];
 
     static useBefore(middleware: Middleware){
-        this.middleware.push(middleware)
+        Router.middleware.push(middleware)
     }
 
     static useAfter(endware: Endware){
-        this.endware.push(endware)
+        Router.endware.push(endware)
     }
 
     /**
@@ -28,7 +28,7 @@ export class Router{
      * @param binding Binding variable used by the durable object
      */
     static register(target: WorkerController, {binding = ""} = {}){
-        this.routes += (target as any).routes.map((route: Routing) => {
+        Router.routes += (target as any).routes.map((route: Routing) => {
             route.DOBinding = binding;
             return route;
         })
@@ -37,7 +37,7 @@ export class Router{
     static async route(session: Session): Promise<any>{
         // Find the registered route matching the session
         let targetRoute: Routing;
-        for(const route of this.routes){
+        for(const route of Router.routes){
             if([route.method, 'ANY'].includes(session.request.method)){
                 let params = []; // TODO: Actually parse params
                 let regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step? 
