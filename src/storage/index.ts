@@ -2,9 +2,13 @@ import { Session } from "../io/input"
 import { DOTarget } from "../types"
 
 /** Add a KV namespace binding to the target controller */
-export function KVBinding(namespace: string){
+export function KVBindings(mappings: object){
     return (target: any) => {
-        console.log(`KV Binding not implemented: attempting to bind ${namespace}`)
+        if(target.KVBinds){
+            target.KVBinds = {...mappings, ...target.KVBinds}
+        } else {
+            target.KVBinds = mappings
+        }
     }
 }
 

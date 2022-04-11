@@ -34,12 +34,12 @@ export class Router{
         })
     }
 
-    static route(session: Session): any{
+    static async route(session: Session): Promise<any>{
         // Find the registered route matching the session
         let targetRoute: Routing;
         for(const route of this.routes){
             if([route.method, 'ANY'].includes(session.request.method)){
-                let params = [];
+                let params = []; // TODO: Actually parse params
                 let regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step? 
                 let parsed = regex.exec(session.request.host + session.request.pathname);
                 if(parsed){
@@ -48,7 +48,7 @@ export class Router{
                 }
             }
         }
-        // Enact all middleware on the request
+        // TODO: Enact all middleware on the request
         
         // Route the request
         let response: Promise<Response> = undefined;
@@ -67,12 +67,14 @@ export class Router{
             }
             let remoteObject = targetNS.get(targetID);
             // Pass the request to the Durable Object
-            response = remoteObject.fetch(await session.request.createTargetRequest(targetRoute.propertyKey));
+            response = remoteObject.fetch(session.request.createTargetRequest(targetRoute.propertyKey));
         } else {
             let targetController = new (targetRoute.controller as any).constructor();
+            targetController.addKVBindings();
             response = targetController[targetRoute.method](session, session)
         }
-        // Enact all endware on the response
+        // TODO: Enact all endware on the response
+
         return response
     }
 }

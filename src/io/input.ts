@@ -75,7 +75,7 @@ class InboundRequest {
     query: object = undefined;
     headers: Headers = undefined;
     body: string | object = undefined;
-    json: object = undefined;
+    json: any = undefined;
 
     constructor(){
         return this;
@@ -89,7 +89,8 @@ class InboundRequest {
         this.host = this.url.hostname
         this.pathname = this.url.pathname
         this.query = Object.fromEntries(new URLSearchParams(this.url.search))
-        this.headers = request.headers; // TODO: Do I want to parse this more? Only non serializable thing we track
+        this.headers = request.headers;
+        // TODO: This must always parse body on worker -> DO requests
         if (['POST', 'PUT', 'PATCH'].includes(this.method)) {
             if (request.headers.has('Content-Type') && request.headers.get('Content-Type').includes('json')) {
                 try {
@@ -114,7 +115,7 @@ class InboundRequest {
      * @param target The target function to be called within the durable object
      * @returns A request object to be executed
      */
-    async createTargetRequest(target: string): Promise<Request>{
+    createTargetRequest(target: string): Request{
         return new Request(this.url.toString(), {
             headers: this.headers,
             body: JSON.stringify({
@@ -123,6 +124,18 @@ class InboundRequest {
                 target: target
             })
         })
+    }
+
+    /**
+     * Assumes itself is a targeted request and undoes it
+     * @returns The target handler method for the DO to execute
+     */
+     parseTargetRequest(): string{
+        this.params = this.json.params;
+        let target = this.json.target;
+        this.json = this.json.originalContent;
+        this.body = this.json;
+        return target;
     }
 }
 

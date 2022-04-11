@@ -13,4 +13,10 @@ export abstract class WorkerController{
         globalThis.env = env;
         this.env = env;
     }
+
+    addKVBindings(){
+        (this.constructor as any).KVBinds.entries.forEach(([key, value]) => {
+            this[key] = new KVStore(value);
+        })
+    }
 }
