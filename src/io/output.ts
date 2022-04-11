@@ -32,7 +32,7 @@ function responseFactory(data: any): Response{
  */
 function HttpCode(code: number){
     return (target, prop, receiver) => {
-        console.log('Adding status codes like this not supported yet')
+        console.log('TODO: Adding status codes like this not supported yet')
     }
 }
 
@@ -42,6 +42,6 @@ function HttpCode(code: number){
  */
 function Header(header: string, value: string){
     return (target, prop, receiver) => {
-        console.log('Adding headers like this not supported yet')
+        console.log('TODO: Adding headers like this not supported yet')
     }
 }

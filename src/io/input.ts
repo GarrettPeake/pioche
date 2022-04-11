@@ -23,7 +23,7 @@ export class Session{
 
     constructor(request: Request){
         this.client = new Client(request)
-        this.request = new InboundRequest(request)
+        this.request = new InboundRequest(request) // TODO: Find balance between async await and contruction
         this.sessionid = this.request.headers?.['cf-ray']
         this.logger = new Logger(this.sessionid)
     }
@@ -82,7 +82,6 @@ class InboundRequest {
     }
 
     async parse(request: Request){
-        // TODO: Ensure that this is not a duplicated request
         this.request = request
         this.method = (request.method.toUpperCase() as HTTPMethod)
         this.url = new URL(String(request.url));

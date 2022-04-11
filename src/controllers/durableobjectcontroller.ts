@@ -11,7 +11,6 @@ export abstract class DurableObjectController extends WorkerController{
 
     storage: DurableObjectStorage;
     state: DurableObjectState;
-    target: {id?: DurableObjectId, name?: string, hex?: string};
 
     /**
      * Default constructor for remote durable objects

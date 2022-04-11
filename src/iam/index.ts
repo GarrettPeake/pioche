@@ -1,15 +1,9 @@
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
-import { DurableObjectController } from "../controllers/durableobjectcontroller";
-
-export class OAuthController extends DurableObjectController{
-    
-}
-
 /**
  * Basic implementation for JWT issuing, reading, and validation
  */
- export const JWT = {
+export const JWT = {
     sign: (message: object) => {
         return jwt.sign(message, globalThis.env.JWT_KEY)
     },
