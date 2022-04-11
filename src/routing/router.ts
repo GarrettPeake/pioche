@@ -51,17 +51,25 @@ export class Router{
         // Enact all middleware on the request
         
         // Route the request
-        let response: Response = undefined;
+        let response: Promise<Response> = undefined;
         // Check if we're routing to a D/O
         if(targetRoute.controller instanceof DurableObjectController){
             // Call the function which generates our DO target
-            let targetDO = targetRoute.controller[targetRoute.DOBinding](session, session);
-            // TODO: Call the correct generation function
-            let remoteObject = globalThis.env[targetRoute.DOBinding].get(targetDO);
+            let targetNS: DurableObjectNamespace = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace)
+            let targetDO = (targetRoute.controller as any)?.DOTarget(targetNS, session, session);
+            let targetID: DurableObjectId = targetNS.idFromName('default');
+            if (targetDO?.name){
+                targetID = targetNS.idFromName(targetDO.name);
+            } else if (targetDO?.idstring){
+                targetID = targetNS.idFromString(targetDO.idstring)
+            } else if (targetDO?.id){
+                targetID = targetDO.id;
+            }
+            let remoteObject = targetNS.get(targetID);
             // Pass the request to the Durable Object
-            response = remoteObject.fetch(session.request.createTargetRequest(targetRoute.propertyKey));
+            response = remoteObject.fetch(await session.request.createTargetRequest(targetRoute.propertyKey));
         } else {
-            let targetController = new targetRoute.controller.constructor();
+            let targetController = new (targetRoute.controller as any).constructor();
             response = targetController[targetRoute.method](session, session)
         }
         // Enact all endware on the response

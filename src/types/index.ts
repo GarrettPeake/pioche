@@ -32,3 +32,9 @@ export interface Routing {
     propertyKey: string;
     DOBinding?: string;
 }
+
+export interface DOTarget {
+    name?: string;
+    idstring?: string;
+    id?: DurableObjectId;
+}
