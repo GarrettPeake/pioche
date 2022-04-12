@@ -1,6 +1,13 @@
-# Pioche
-
-TypeScript first framework for [Cloudflare Workers](https://workers.cloudflare.com) enabling ⚡lightning⚡ fast development and execution 
+ <div>
+ <p align="center">
+  <a href="https://github.com/hodgef/apiker" title="View Project Source"><img width="110" src="https://github.com/GarrettPeake/pioche/blob/master/readme_logo.png" /></a>
+ </p>
+ 
+ <div align="center">
+  <p>TypeScript first framework for <a href='https://workers.cloudflare.com'>Cloudflare Workers</a> enabling ⚡lightning⚡ fast development and execution</p>
+</div>
+<a href="https://www.npmjs.com/package/pioche"><img src="https://badgen.net/npm/v/pioche?color=blue" alt="npm version"></a>
+</div>
 
 Note: To use Pioche, you need a Cloudflare account with [Durable Objects access](https://developers.cloudflare.com/workers/learning/using-durable-objects/#using-durable-objects-1)
 
