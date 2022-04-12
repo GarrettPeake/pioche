@@ -3,6 +3,7 @@ import { Endware, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
 import { pathToRegexp, match, parse, compile } from "path-to-regexp";
+import { dataToResponse } from "../io/output";
 
 /**
  * A router class implementing path-to-regexp
@@ -51,7 +52,7 @@ export class Router{
         // TODO: Enact all middleware on the request
         
         // Route the request
-        let response: Promise<Response> = undefined;
+        let response: Promise<any> = undefined;
         // Check if we're routing to a D/O
         if(targetRoute.controller instanceof DurableObjectController){
             // Call the function which generates our DO target
@@ -74,7 +75,7 @@ export class Router{
             response = targetController[targetRoute.method](session, session)
         }
         // TODO: Enact all endware on the response
-
+        let validResponse: Response = dataToResponse(await response)
         return response
     }
 }
