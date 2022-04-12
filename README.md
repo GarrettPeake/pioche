@@ -1,6 +1,6 @@
  <div>
  <p align="center">
-  <a href="https://github.com/hodgef/apiker" title="View Project Source"><img width="110" src="https://github.com/GarrettPeake/pioche/blob/master/readme_logo.png" /></a>
+  <a href="https://github.com/hodgef/apiker" title="View Project Source"><img width="240" src="https://github.com/GarrettPeake/pioche/blob/master/readme_logo.png" /></a>
  </p>
  
  <div align="center">
