@@ -130,7 +130,7 @@ export function createStorageProxy(element: any){
                 return this.resolve(target, key);
             }
             this.chain.push(key);
-            return new Proxy(target, this);
+            return new Proxy(target, this); // TODO: Can this just be "this"
         },
         set (target: any, key: any, value: any): any {
             this.chain.push(key);

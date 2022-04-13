@@ -1,13 +1,7 @@
 import { WorkerController } from "../controllers/workercontroller";
 import { Session } from "../io/input";
 
-/** Type definition for objects with key level permissioned access */
-export type PermissionedObject = {
-    data: any;
-    mask: any;
-}
-
-// A type defining the strings that can be used as methods
+/** A type defining the strings that can be used as methods */
 export type HTTPMethod =
     "get" | "GET" |
     "head" | "HEAD" |
@@ -24,6 +18,7 @@ export type HTTPMethod =
 export type Middleware = (session: Session, next: undefined | Middleware | Endware) => any
 export type Endware =    (session: Session, data: any, next: undefined | Endware) => any
 
+/** Defines a route to a given endpoint */
 export interface Routing {
     method: HTTPMethod; 
     host?: string;
@@ -33,6 +28,7 @@ export interface Routing {
     DOBinding?: string;
 }
 
+/** Defines a target durable object */
 export interface DOTarget {
     name?: string;
     idstring?: string;

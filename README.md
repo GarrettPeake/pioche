@@ -9,7 +9,7 @@
 <a href="https://www.npmjs.com/package/pioche"><img src="https://badgen.net/npm/v/pioche?color=blue" alt="npm version"></a>
 </div>
 
-Note: To use Pioche, you need a Cloudflare account with [Durable Objects access](https://developers.cloudflare.com/workers/learning/using-durable-objects/#using-durable-objects-1)
+Note: To use all features of Pioche, you need a Cloudflare account with [Durable Objects access](https://developers.cloudflare.com/workers/learning/using-durable-objects/#using-durable-objects-1)
 
 ## ⭐ Features
  - [x] Short development time
