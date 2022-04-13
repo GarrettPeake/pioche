@@ -45,6 +45,8 @@ export abstract class StorageElement{
         }): boolean; // Performs set, not spread
 
     // storage.c1.c2.spread(object, options?)
+    // if the chain is a single key and doesn't exist, make it
+    // if the spreading object is an array, make it an array, and same for object
     abstract chainSpread(
         chain: string[],
         value: object,

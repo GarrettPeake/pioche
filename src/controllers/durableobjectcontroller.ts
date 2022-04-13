@@ -11,7 +11,7 @@ import { WorkerController } from "./workercontroller";
  */
 export abstract class DurableObjectController extends WorkerController{
 
-    storage: DurableObjectStorage;
+    storage: DurableObjectStore; // TODO: We want this to be both any and typed...
     state: DurableObjectState;
 
     /**

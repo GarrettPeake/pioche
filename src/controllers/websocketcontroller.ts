@@ -4,7 +4,7 @@ import { DurableObjectController } from "./durableobjectcontroller";
 
 /**
  * Extension of the resource class for items which require
- * websockets, this functions as a local portal through which
+ * WebSockets, this functions as a local portal through which
  * the worker can interact with the remote durable object
  */
 export abstract class WebsocketController extends DurableObjectController {
@@ -44,19 +44,22 @@ export abstract class WebsocketController extends DurableObjectController {
 
         // Iterate over all the sessions sending them messages or removing them
         this.sessions = this.sessions.filter((session) => {
-            if (session.websocket.connected) {
-                try {
-                    session.websocket.socket.send(message);
+            if(this.receiveBroadcast(session, message)){
+                if (session.websocket.connected) {
+                    try {
+                        session.websocket.socket.send(message);
+                        return true;
+                    } catch (err) {
+                        session.websocket.ended = true;
+                        return false;
+                    }
+                } else {
+                    // user hasn't finished connecting
+                    session.websocket.rQueue.push(message);
                     return true;
-                } catch (err) {
-                    session.websocket.ended = true;
-                    return false;
                 }
-            } else {
-                // user hasn't finished connecting
-                session.websocket.rQueue.push(message);
-                return true;
             }
+            return true; // User doesn't get broadcast but may still be connected
         });
     }
 
@@ -65,7 +68,7 @@ export abstract class WebsocketController extends DurableObjectController {
         this.sessions.push(session);
 
         // Set event handlers to receive messages.
-        session.websocket.socket.addEventListener("message", async (msg) => {
+        session.websocket.socket.addEventListener("message", async (msg: any) => {
             if(!session.websocket.connected){
                 try {
                     if (session.websocket.ended) {
@@ -80,11 +83,13 @@ export abstract class WebsocketController extends DurableObjectController {
                     // Send a ready message
                     session.websocket.socket.send(JSON.stringify({ ready: true }));
                 } catch (err:any) {
-                    session.websocket.socket.send(JSON.stringify({ message: "An error occurred during initialization" }));
+                    session.websocket.socket.send(
+                        JSON.stringify({ message: "An error occurred during initialization" })
+                    );
                 }
             }
             session.websocket.connected = true;
-            this.messageHandler(msg.data);
+            this.messageHandler(session, msg.data);
         });
 
         // On "close" and "error" events, remove the WebSocket from the sessions list and broadcast
@@ -97,10 +102,9 @@ export abstract class WebsocketController extends DurableObjectController {
     }
 
     // Defines behaviour when receiving a message
-    abstract messageHandler(message: string | ArrayBuffer): void;
+    abstract messageHandler(session: Session, message: string | ArrayBuffer): void;
 
     // Defines whether a user should receive a broadcast
-    // TODO: logic for this is not implemented
-    abstract receiveBroadcast(message: string): boolean;
+    abstract receiveBroadcast(session: Session, message: string): boolean;
 
 }

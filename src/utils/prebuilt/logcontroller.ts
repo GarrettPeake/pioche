@@ -23,27 +23,24 @@ export class LogsDurableObject extends WebsocketController {
     // Creates log entry for the given sitename
     @PostMap("")
     async addLog(session: Session){
-        // Assert that we have a loggroup
+        // Assert that we have a groupingid
         assertStructure(session.request, {groupingid: ()=>true, messages: n=>typeof n === "object"});
-        // Get key from storage
-        let old_data: object[] = await this.storage.get(session.request.json.groupingid) || [];
-        // Append list of new objects to key
-        old_data = old_data.concat(session.request.json.body.messages);
-        console.log(old_data);
-        // Write key back to storage
-        await this.storage.put((session.request.body as any).loggroup, old_data);
-        // Publish updated list to broadcast
-        this.broadcast(old_data);
+        // Get the messages
+        const messages = (await session.request.json()).body.messages;
+        // Spread the messages on the groupingid
+        await this.storage[(await session.request.json()).groupingid].spread(messages);
+        // Publish updates
+        this.broadcast(messages);
         // Set the response
-        return {message: "Log entry added"};
+        return {message: "Log entries added"};
     }
 
-    messageHandler(message: string | ArrayBuffer): void {
+    messageHandler(session: Session, message: string | ArrayBuffer): void {
         // Add history retrieve functionality
         // We don't want to broadcast messages from users
     }
 
-    receiveBroadcast(message: string): boolean {
-        return false;
+    receiveBroadcast(): boolean {
+        return true; // 
     }
 }
