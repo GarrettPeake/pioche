@@ -30,7 +30,7 @@ export abstract class DurableObjectController extends WorkerController{
         // Generate the session object
         const session = new Session(request);
         // Undo the request targeting within the request object
-        const targetHandler = session.request.parseTargetRequest();
+        const targetHandler = await session.request.parseTargetRequest();
 
         // Log Entry into the DO
         console.log(`------- EVENT RECEIVED AT ${this.state.id} DURABLE OBJECT -------`);

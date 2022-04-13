@@ -40,7 +40,7 @@ export class Router{
         let targetRoute: Routing;
         for(const route of Router.routes){
             if([route.method, "ANY"].includes(session.request.method)){
-                let params = []; // TODO: Actually parse params
+                const params = []; // TODO: Actually parse params
                 const regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step? 
                 const parsed = regex.exec(session.request.host + session.request.pathname);
                 if(parsed){

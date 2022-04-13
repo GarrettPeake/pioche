@@ -1,8 +1,6 @@
 import { Client } from "../iam";
-import { assertPerms, maskPerms } from "../iam/prechecks";
 import { Logger } from "../logging/logger";
-import { HTTPMethod, PermissionedObject } from "../types";
-import { assertStructure } from "../utils";
+import { HTTPMethod } from "../types";
 
 
 export class Session{
@@ -36,32 +34,7 @@ export class Session{
         this.logger.log(info);
     }
 
-    /**
-     * Authorizes a function to run based on a set of requirements
-     * returns a failure Response if authorization fails
-     * @param requirements A list of requirements for the action
-     * @param funct A function to execute and return if the authorization succeeds
-     */
-    async assertPerms(requirements: any, funct: () => Response | Promise<Response>){
-        return assertPerms(this, requirements);
-    }
-
-    /**
-     * Applies the users ranks to a permissions mask
-     * @param permmed A PermissionedObject to resolve
-     */
-    async maskPerms(permmed: PermissionedObject){
-        return maskPerms(this, permmed);
-    }
-
-    /**
-     * 
-     * @param format Applies format requirements to the event
-     * @returns The formatted event, or false
-     */
-    async assertEvent(format: any){
-        return assertStructure(this, format);
-    }
+    // TODO: Create session-attaching wrappers for asserting functions
 }
 
 export class InboundRequest {
@@ -74,14 +47,10 @@ export class InboundRequest {
     params: object = undefined;
     query: object = undefined;
     headers: Headers = undefined;
-    body: string | object = undefined;
-    json: any = undefined;
+    #cache_body: string = undefined;
+    #cache_json: object = undefined;
 
-    constructor(){
-        return this;
-    }
-
-    async parse(request: Request){
+    constructor(request: Request){
         this.request = request;
         this.method = (request.method.toUpperCase() as HTTPMethod);
         this.url = new URL(String(request.url));
@@ -89,24 +58,21 @@ export class InboundRequest {
         this.pathname = this.url.pathname;
         this.query = Object.fromEntries(new URLSearchParams(this.url.search));
         this.headers = request.headers;
-        // TODO: This must always parse body on worker -> DO requests
-        if (["POST", "PUT", "PATCH"].includes(this.method)) {
-            if (request.headers.has("Content-Type") && request.headers.get("Content-Type").includes("json")) {
-                try {
-                    this.json = await request.json();
-                    this.body = this.json;
-                } catch {
-                    this.json = {};
-                    this.body = "";
-                }
-            } else {
-                try {
-                    this.body = await request.text();
-                } catch {
-                    this.body = "";
-                }
-            }
+    }
+
+    async body(): Promise<string>{
+        if(this.#cache_body === undefined)
+            this.#cache_body = await this.request.text();
+        return this.#cache_body;
+    }
+
+    async json(): Promise<any>{
+        if(this.#cache_json === undefined){
+            if(this.#cache_body === undefined)
+                this.#cache_body = await this.request.text();
+            this.#cache_json = JSON.parse(this.#cache_body);
         }
+        return this.#cache_json;
     }
 
     /**
@@ -129,15 +95,16 @@ export class InboundRequest {
      * Assumes itself is a targeted request and undoes it
      * @returns The target handler method for the DO to execute
      */
-     parseTargetRequest(): string{
-        this.params = this.json.params;
-        const target = this.json.target;
-        this.json = this.json.originalContent;
-        this.body = this.json;
+    async parseTargetRequest(): Promise<string>{
+        const json = await this.json();
+        this.params = json.params;
+        const target = (json.target as string);
+        this.json = json.originalContent;
+        this.body = json.originalContent;
         return target;
     }
 }
 
 export function AcceptContent(type: string){
-    console.log("Accept functionality not implemented");
+    console.log("TODO: Accept functionality not implemented");
 }
