@@ -26,8 +26,8 @@ export abstract class WebsocketController extends DurableObjectController {
         if (session.request.headers["upgrade"] !== "websocket")
             return {code: 426, body: "Must provide Upgrade header with value 'websocket'"};
         // Give the user a websocket
-        let pair = new WebSocketPair();
-        session.websocket.socket = pair[1]
+        const pair = new WebSocketPair();
+        session.websocket.socket = pair[1];
         await this.addListeners(session);
         return new Response(null, { status: 101, webSocket: pair[0] });
     }
@@ -88,7 +88,7 @@ export abstract class WebsocketController extends DurableObjectController {
         });
 
         // On "close" and "error" events, remove the WebSocket from the sessions list and broadcast
-        let closeOrErrorHandler = (evt) => {
+        const closeOrErrorHandler = () => {
             session.websocket.ended = true;
             this.sessions = this.sessions.filter((member) => member !== session);
         };

@@ -1,9 +1,7 @@
-
-
 /**
  * Superclass for interacting with storage elements
  */
-abstract class StorageElement{
+export abstract class StorageElement{
     
     element: any = undefined;
 
@@ -116,34 +114,34 @@ abstract class StorageElement{
         }): {keys: string[], cursor: string, complete: boolean}
 }
 
-function createStorageProxy(element: any){
-    var handler = {
+export function createStorageProxy(element: any){
+    const handler = {
         chain: [],
         resolve(target: any, func: string){ // Generate a passthrough function appending the chain
-            let currChain = [...this.chain]
-            let result = (...args: any) => target[func](currChain, ...args);
-            this.chain = []
-            return result
+            const currChain = [...this.chain];
+            const result = (...args: any) => target[func](currChain, ...args);
+            this.chain = [];
+            return result;
         },
         get(target:any, key:any): any{
-            if(typeof target[key] === 'function'){
+            if(typeof target[key] === "function"){
                 return this.resolve(target, key);
             }
             this.chain.push(key);
             return new Proxy(target, this);
         },
         set (target: any, key: any, value: any): any {
-            this.chain.push(key)
+            this.chain.push(key);
             return this.resolve(target, "assign")(value);
         },
         defineProperty (target: any, key: any, value: any): any {
-            this.chain.push(key)
+            this.chain.push(key);
             return this.resolve(target, "assign")(value);
         },
         deleteProperty (target: any, key: any): any {
-            this.chain.push(key)
+            this.chain.push(key);
            return this.resolve(target, "remove")();
         }
-    }
+    };
     return new Proxy(element, handler);
 }

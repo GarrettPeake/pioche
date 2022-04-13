@@ -1,5 +1,5 @@
-import { Session } from '../io/input';
-import { Router } from './router';
+import { Session } from "../io/input";
+import { Router } from "./router";
 
 /**
  * Entry point for the worker using modules worker syntax
@@ -8,8 +8,8 @@ import { Router } from './router';
  * @returns A promise containing a response
  */
 export async function handleFetch(request: Request, env: any) {
-    let session = new Session(request)
-    session.logger.log('REQUEST RECEIVED');
+    const session = new Session(request);
+    session.logger.log("REQUEST RECEIVED");
 
     // Make the environment available to the entire framework
     globalThis.env = env;
@@ -19,7 +19,7 @@ export async function handleFetch(request: Request, env: any) {
     // TODO: Remember to handle preflights 'easyPreflight'
     
     // Route request
-    return Router.route(session)
+    return Router.route(session);
 }
 
 export async function handleScheduled(event: any, env: any) {
@@ -29,5 +29,5 @@ export async function handleScheduled(event: any, env: any) {
             "https://www.dummy-url.com/cron?trigger=" + event.cron
         ),
         env
-    )
+    );
 }

@@ -1,7 +1,7 @@
 /**
  * Superclass for interacting with storage elements
  */
-class DurableObjectStore extends StorageElement{
+export class DurableObjectStore extends StorageElement{
 
     /**
      * Constructs the superclass for storage element interaction

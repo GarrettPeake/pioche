@@ -21,8 +21,8 @@ export type HTTPMethod =
     "any" | "ANY";
 
 // Types for middleware and endware components
-export type Middleware = (session: Session, next: undefined | Middleware | Endware) => {}
-export type Endware =    (session: Session, data: any, next: undefined | Endware) => {}
+export type Middleware = (session: Session, next: undefined | Middleware | Endware) => any
+export type Endware =    (session: Session, data: any, next: undefined | Endware) => any
 
 export interface Routing {
     method: HTTPMethod; 

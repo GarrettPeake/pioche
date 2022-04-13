@@ -16,20 +16,20 @@
 export function dataToResponse(data: any): Response{
     // Check for response object
     if(data instanceof Response){
-        return (data as Response)
+        return (data as Response);
     }
 
     // Check for object shaped response
-    let {status, statusText, body, headers, webSocket, ...other} = data
+    const {status, statusText, body, headers, webSocket, ...other} = data;
     if(status || statusText || body || headers || webSocket && !other){ // We have a object shaped response
         return new Response( // Options will be destructured correctly in the constructor
-            typeof body === 'object' ? JSON.stringify(body) : String(body),
+            typeof body === "object" ? JSON.stringify(body) : String(body),
             data
-        )
+        );
     }
 
     // Format a correct response
-    return new Response( typeof data === 'object' ? JSON.stringify(data) : String(data))
+    return new Response( typeof data === "object" ? JSON.stringify(data) : String(data));
 }
 
 /**
@@ -38,8 +38,8 @@ export function dataToResponse(data: any): Response{
  */
 export function HttpCode(code: number){
     return (target, prop, receiver) => {
-        console.log('TODO: Adding status codes like this not supported yet')
-    }
+        console.log("TODO: Adding status codes like this not supported yet");
+    };
 }
 
 /**
@@ -48,6 +48,6 @@ export function HttpCode(code: number){
  */
 export function Header(header: string, value: string){
     return (target, prop, receiver) => {
-        console.log('TODO: Adding headers like this not supported yet')
-    }
+        console.log("TODO: Adding headers like this not supported yet");
+    };
 }

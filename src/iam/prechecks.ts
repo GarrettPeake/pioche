@@ -8,7 +8,7 @@ import { PermissionedObject } from "../types";
  * @returns A non-auth response or the result of the action
  */
 export async function assertPerms(session: Session, authobj){
-    console.log('TODO: assertPerms Function not implement')
+    console.log("TODO: assertPerms Function not implement");
 }
 
 /**
@@ -18,7 +18,7 @@ export async function assertPerms(session: Session, authobj){
  * @returns A copy of the object with data requiring higher perms removed
  */
 export async function maskPerms(session: Session, permmedobj: PermissionedObject){
-    console.log('TODO: maskperms Function not implement')
+    console.log("TODO: maskperms Function not implement");
 }
 
 /**
@@ -29,5 +29,5 @@ export async function maskPerms(session: Session, permmedobj: PermissionedObject
  * @returns boolean whether check passed
  */
 export function checkPerms(event, requirements){
-    console.log('TODO: checkPerms Function not implement')
+    console.log("TODO: checkPerms Function not implement");
 }

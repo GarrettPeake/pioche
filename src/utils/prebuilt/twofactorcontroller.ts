@@ -5,10 +5,10 @@
  * @returns Unique 6 digit code based on time and value
  */
  export async function sixDigitHash(value: string, t=null){
-    let code:any = String(t || Math.floor(Date.now()/1000/60)) + value + 'ifficient!!'; // Assemble the string for hashing
+    let code:any = String(t || Math.floor(Date.now()/1000/60)) + value + "ifficient!!"; // Assemble the string for hashing
     code = new TextEncoder().encode(code); // Encode the string to bytes
-    return crypto.subtle.digest('SHA-256', code) // Hash the string
-        .then(digest => Array.from(new Uint8Array(digest)).map(b => b.toString(10).padStart(2, '0')).join(''))
+    return crypto.subtle.digest("SHA-256", code) // Hash the string
+        .then(digest => Array.from(new Uint8Array(digest)).map(b => b.toString(10).padStart(2, "0")).join(""))
         .then(intstring => intstring.slice(3, 9));
 }
 
@@ -19,12 +19,12 @@
  * @param m Timespan for proof
  * @returns boolean whether hash was generated from value within m minutes
  */
-export async function validateHash(value, hash, m){
-    let timeCode = Math.floor(Date.now()/1000/60) // Get the unix minute
-    for(var i = 0; i < m; i++){
+export async function validateHash(value: string, hash: string, m: number){
+    const timeCode = Math.floor(Date.now()/1000/60); // Get the unix minute
+    for(let i = 0; i < m; i++){
         if(await sixDigitHash(value, timeCode-i) == String(hash)){
-            return true
+            return true;
         }
     }
-    return false
+    return false;
 }

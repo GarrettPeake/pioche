@@ -3,7 +3,7 @@
 /**
  * Storage interface for KV storage namespaces
  */
- class KVStore extends StorageElement{
+export class KVStore extends StorageElement{
 
     /**
      * Constructs the superclass for storage element interaction

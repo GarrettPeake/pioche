@@ -19,13 +19,13 @@ export class Session{
         tQueue: [],
         config: {},
         startTime: Date.now()
-    }
+    };
 
     constructor(request: Request){
-        this.client = new Client(request)
-        this.request = new InboundRequest(request) // TODO: Find balance between async await and contruction
-        this.sessionid = this.request.headers?.['cf-ray']
-        this.logger = new Logger(this.sessionid)
+        this.request = new InboundRequest(request); // TODO: Find balance between async await and contruction
+        this.client = new Client(this.request);
+        this.sessionid = this.request.headers?.["cf-ray"];
+        this.logger = new Logger(this.sessionid);
     }
 
     /**
@@ -33,7 +33,7 @@ export class Session{
      * @param info Info to be logged
      */
     async log(info: any){
-        this.logger.log(info)
+        this.logger.log(info);
     }
 
     /**
@@ -51,7 +51,7 @@ export class Session{
      * @param permmed A PermissionedObject to resolve
      */
     async maskPerms(permmed: PermissionedObject){
-        return maskPerms(this, permmed)
+        return maskPerms(this, permmed);
     }
 
     /**
@@ -64,7 +64,7 @@ export class Session{
     }
 }
 
-class InboundRequest {
+export class InboundRequest {
 
     request: Request = undefined;
     method: HTTPMethod = undefined;
@@ -82,28 +82,28 @@ class InboundRequest {
     }
 
     async parse(request: Request){
-        this.request = request
-        this.method = (request.method.toUpperCase() as HTTPMethod)
+        this.request = request;
+        this.method = (request.method.toUpperCase() as HTTPMethod);
         this.url = new URL(String(request.url));
-        this.host = this.url.hostname
-        this.pathname = this.url.pathname
-        this.query = Object.fromEntries(new URLSearchParams(this.url.search))
+        this.host = this.url.hostname;
+        this.pathname = this.url.pathname;
+        this.query = Object.fromEntries(new URLSearchParams(this.url.search));
         this.headers = request.headers;
         // TODO: This must always parse body on worker -> DO requests
-        if (['POST', 'PUT', 'PATCH'].includes(this.method)) {
-            if (request.headers.has('Content-Type') && request.headers.get('Content-Type').includes('json')) {
+        if (["POST", "PUT", "PATCH"].includes(this.method)) {
+            if (request.headers.has("Content-Type") && request.headers.get("Content-Type").includes("json")) {
                 try {
                     this.json = await request.json();
                     this.body = this.json;
                 } catch {
-                    this.json = {}
-                    this.body = ''
+                    this.json = {};
+                    this.body = "";
                 }
             } else {
                 try {
-                    this.body = await request.text()
+                    this.body = await request.text();
                 } catch {
-                    this.body = ''
+                    this.body = "";
                 }
             }
         }
@@ -122,7 +122,7 @@ class InboundRequest {
                 params: this.params,
                 target: target
             })
-        })
+        });
     }
 
     /**
@@ -131,7 +131,7 @@ class InboundRequest {
      */
      parseTargetRequest(): string{
         this.params = this.json.params;
-        let target = this.json.target;
+        const target = this.json.target;
         this.json = this.json.originalContent;
         this.body = this.json;
         return target;
@@ -139,5 +139,5 @@ class InboundRequest {
 }
 
 export function AcceptContent(type: string){
-    console.log('Accept functionality not implemented')
+    console.log("Accept functionality not implemented");
 }

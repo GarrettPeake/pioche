@@ -16,18 +16,18 @@
  *   }
  */
 export function assertStructure(tbf: any, format: any){
-    for(var key in format){
+    for(const key in format){
         if(typeof format[key] === "function"){ // Function check
             if(!format[key](tbf[key])){
-                console.log(`assertStructure f fail: key->${key} fval->${format[key]} oval->${tbf[key]}`)
+                console.log(`assertStructure f fail: key->${key} fval->${format[key]} oval->${tbf[key]}`);
                 return false;
             } else
                 format[key] = tbf[key];
         }
         if(typeof format[key] === "object"){ // Recursive formatting check
-            format[key] = assertStructure(tbf[key], format[key])
+            format[key] = assertStructure(tbf[key], format[key]);
             if(!format[key]){
-                console.log(`assertStructure o fail: key->${key} fval->${format[key]} oval->${tbf[key]}`)
+                console.log(`assertStructure o fail: key->${key} fval->${format[key]} oval->${tbf[key]}`);
                 return false;
             }
         }

@@ -1,22 +1,23 @@
-import jwt from '@tsndr/cloudflare-worker-jwt';
+import jwt from "@tsndr/cloudflare-worker-jwt";
+import { InboundRequest } from "../io/input";
 
 /**
  * Basic implementation for JWT issuing, reading, and validation
  */
 export const JWT = {
     sign: (message: object) => {
-        return jwt.sign(message, globalThis.env.JWT_KEY)
+        return jwt.sign(message, globalThis.env.JWT_KEY);
     },
     verify: (token: string) => {
-        return jwt.verify(token, globalThis.env.JWT_KEY)
+        return jwt.verify(token, globalThis.env.JWT_KEY);
     },
     read: (token: string) => {
-        return jwt.decode(token)
+        return jwt.decode(token);
     },
     read_if_valid: (token: string) => {
         return JWT.verify(token) ? JWT.read(token) : false;
     }
-}
+};
 
 export class Client{
     
@@ -26,7 +27,7 @@ export class Client{
     name: string;
     ttl: number;
 
-    constructor(request: Request){
-
+    constructor(request: InboundRequest){
+        // TOOD: Construct the client
     }
 }

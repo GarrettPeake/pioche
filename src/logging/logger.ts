@@ -3,7 +3,7 @@
 type message = {
     timestamp: number,
     data: any
-}
+};
 
 /**
  * Class to interact with logging DO to enable websocket logs
@@ -16,7 +16,7 @@ export class Logger{
     lastts: number;
     env: any;
     
-    constructor(groupingid: string, live: boolean = true){
+    constructor(groupingid: string, {live = true} = {}){
         this.live = live;
         this.groupingid = groupingid;
         this.lastts = Date.now();
@@ -44,8 +44,8 @@ export class Logger{
 
     async _post(messages: message[]){
         // Generate a request that will get properly routed on the other end
-        let id = globalThis.env.LOGS.idFromName("logserver");
-        let logserver = globalThis.env.LOGS.get(id);
+        const id = globalThis.env.LOGS.idFromName("logserver");
+        const logserver = globalThis.env.LOGS.get(id);
         await logserver.fetch("https://www.dummy-url.com/logs", {
             method: "POST",
             body: JSON.stringify({

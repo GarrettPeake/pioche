@@ -7,7 +7,7 @@
 export function LiveLogs(enabled: boolean){
     return function (target: any){
         target.liveLogging = enabled;
-    }
+    };
 }
 
 /** TODO: Implement as session level pointer
@@ -16,5 +16,5 @@ export function LiveLogs(enabled: boolean){
  * if Durable Object logging is enabled
  */
 export function LogTarget(){
-    return function(target: any, ) {}
+    return function(target: any, ) {};
 }

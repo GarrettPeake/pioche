@@ -1,3 +1,5 @@
+import { KVStore } from "../storage/kvstore";
+import { createStorageProxy } from "../storage/storage";
 
 /**
  * Abstract superclass for the different types of resources
@@ -5,7 +7,7 @@
  */
 export abstract class WorkerController{
 
-    liveLogging: boolean = false; // Whether to post each log as they come in
+    liveLogging = false; // Whether to post each log as they come in
     env: any = {}; // Set by fetch functions on each host
 
     constructor(env: any){
@@ -16,7 +18,7 @@ export abstract class WorkerController{
 
     addKVBindings(){
         (this.constructor as any).KVBinds.entries.forEach(([key, value]) => {
-            this[key] = new KVStore(value);
-        })
+            this[key] = createStorageProxy(new KVStore(value));
+        });
     }
 }

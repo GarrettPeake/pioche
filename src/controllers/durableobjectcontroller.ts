@@ -1,4 +1,6 @@
 import { Session } from "../io/input";
+import { DurableObjectStore } from "../storage/durableobjectstore";
+import { createStorageProxy } from "../storage/storage";
 import { WorkerController } from "./workercontroller";
 
 
@@ -20,27 +22,27 @@ export abstract class DurableObjectController extends WorkerController{
     constructor(state: any | null, env: any | null){
         super(env);
         this.state = state; // Access to the state object
-        this.storage = state.storage; // Access to permanent storage
+        this.storage = createStorageProxy(new DurableObjectStore(state.storage)); // Access to permanent storage
         this.addKVBindings();
     }
 
     async fetch(request: Request){
         // Generate the session object
-        let session = new Session(request)
+        const session = new Session(request);
         // Undo the request targeting within the request object
-        let targetHandler = session.request.parseTargetRequest();
+        const targetHandler = session.request.parseTargetRequest();
 
         // Log Entry into the DO
         console.log(`------- EVENT RECEIVED AT ${this.state.id} DURABLE OBJECT -------`);
         
         // Execute the method on the DO and save the response
-        let r_val: Response = await this[targetHandler](session, session);
+        const r_val: Response = await this[targetHandler](session, session);
         
         // Log exit of DO
-        console.log(`-------   END OF EXECUTION AT DURABLE OBJECT   -------`);
+        console.log("-------   END OF EXECUTION AT DURABLE OBJECT   -------");
 
         // Exit the logger gracefully
-        session.logger.close()
+        session.logger.close();
         
         return r_val;
     }
