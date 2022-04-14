@@ -31,6 +31,7 @@ npm install pioche
 ```
 Then to implement the features just use them as you would normal pioche controllers and middleware
 ```ts
+import { CustomController } from 'controllers/customcontroller';
 export { CustomController } from 'controllers/customcontroller';
 import { Router } from 'pioche/routing/router';
 import { handleFetch, handleScheduled } from 'pioche/routing/delegator';

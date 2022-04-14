@@ -1,6 +1,6 @@
 {
   "name": "pioche",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Pickaxe in french, get it? Workers, durable objects, pickaxe...",
   "author": "[Garrett Peake](https://github.com/GarrettPeake)",
   "homepage": "https://github.com/GarrettPeake/pioche",
@@ -11,7 +11,8 @@
   "main": "./src/index.js",
   "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "test": "jest",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [

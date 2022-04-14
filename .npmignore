@@ -1,0 +1,19 @@
+# dependencies
+/node_modules
+
+# testing
+/test
+/coverage
+
+# misc
+/.git
+
+# Development folders and files
+.eslintignore
+.eslintrc
+.gitignore
+LICENSE
+README.md
+readme_logo.png
+tsconfig.json
+/src

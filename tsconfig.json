@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-      "outDir": "dist/ts-build",
+      "outDir": "dist",
       "module": "ESNext",
       "target": "esnext",
       "lib": ["esnext"],
