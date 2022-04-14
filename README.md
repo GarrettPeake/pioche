@@ -19,10 +19,27 @@ Note: To use all features of Pioche, you need a Cloudflare account with [Durable
  - [x] Simplified KV + D/O interaction
  - [x] WebSocket handling
  - [x] Minimized invokations and compute time  
-## 🔋 Tree Shakeable Batteries Included
- - [ ] Permissions and roles system with prechecks
- - [ ] Password & OAuth controllers
- - [x] WebSocket logging utility
+## 🔋 Tree Shakeable Batteries Available in [pioche-extras](https://github.com/GarrettPeake/pioche-extras)
+
+See the installation section in [pioche-extras](https://github.com/GarrettPeake/pioche-extras) to add prebuilt OAuth, log streaming, and middleware to your project
+
+## 💾 Installation
+
+To install just run
+```
+npm install pioche
+```
+Then to implement the features just use them as you would normal pioche controllers and middleware
+```ts
+export { CustomController } from 'controllers/customcontroller';
+import { Router } from 'pioche/routing/router';
+import { handleFetch, handleScheduled } from 'pioche/routing/delegator';
+
+Router.register(CustomController, {binding = "CUSTOMBIND"});
+
+export default{handleFetch, handleScheduled};
+...
+```
 
 ## 📕 Background and why Pioche Exists
 
