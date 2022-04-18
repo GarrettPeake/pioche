@@ -1,3 +1,4 @@
+export { Logger } from "./logger";
 
 /**
  * Class decorator specifying whether or not to enable log coalescing

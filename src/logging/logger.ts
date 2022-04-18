@@ -16,7 +16,7 @@ export class Logger{
     lastts: number;
     env: any;
     
-    constructor(groupingid: string, {live = true} = {}){
+    constructor(groupingid: string, {live = false} = {}){
         this.live = live;
         this.groupingid = groupingid;
         this.lastts = Date.now();

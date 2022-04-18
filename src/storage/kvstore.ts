@@ -3,13 +3,13 @@
 /**
  * Storage interface for KV storage namespaces
  */
-export class KVStore extends StorageElement{
+export class KVStore{
 
     /**
      * Constructs the superclass for storage element interaction
      * @param element A KVNamespace object
      */
     constructor(element: KVNamespace){
-        super(element);
+        //super(element);
     }
 }

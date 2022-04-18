@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
       "outDir": "dist",
-      "module": "ESNext",
-      "target": "esnext",
-      "lib": ["esnext"],
+      "module": "esnext",
+      "target": "es6",
+      "declaration": true,
+      "declarationDir": "types",
       "alwaysStrict": true,
       "strict": true,
       "preserveConstEnums": true,
@@ -16,7 +17,8 @@
       "experimentalDecorators": true,
       "types": [
         "@cloudflare/workers-types",
-        "@types/jest"      
+        "@types/jest",
+        "node"
       ]
     },
     "include": ["src"],

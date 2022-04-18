@@ -1,3 +1,6 @@
+export { KVStore } from "./kvstore";
+export { DurableObjectStore } from "./durableobjectstore";
+
 import { Session } from "../io/input";
 import { DOTarget } from "../types";
 
@@ -13,7 +16,7 @@ export function KVBindings(mappings: object){
 }
 
 /** Add a function telling the controller which D/O to route to */
-export function DOTarget(
+export function TargetDO(
     targeter: DOTarget | // Allow a simple @DOTarget({name: 'example'})
     ((targetNS: DurableObjectNamespace, session: Session, ...des) => DOTarget)){
     return (target: any) => {

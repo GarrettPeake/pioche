@@ -1,3 +1,6 @@
+export { Router } from "./router";
+export * from "./delegator";
+
 import { WorkerController } from "../controllers/workercontroller";
 import { HTTPMethod, Routing } from "../types";
 
