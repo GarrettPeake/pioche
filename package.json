@@ -1,15 +1,14 @@
 {
   "name": "pioche",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Pickaxe in french, get it? Workers, durable objects, pickaxe...",
   "author": "[Garrett Peake](https://github.com/GarrettPeake)",
   "homepage": "https://github.com/GarrettPeake/pioche",
   "files": [
     "dist"
   ],
-  "exports": "./dist/",
-  "module": "./dist/esm/index.js",
-  "main": "./dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "main": "dist/cjs/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
@@ -19,7 +18,8 @@
   "scripts": {
     "build": "npx rollup -c",
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "npmpublish": "npm run build && npm publish"
   },
   "keywords": [
     "cloudflare",
