@@ -17,6 +17,7 @@
   "license": "MIT",
   "scripts": {
     "build": "npm install && npx rollup -c",
+    "watch": "npm install && npx rollup -c -w",
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "npmpublish": "npm run build && npm publish"

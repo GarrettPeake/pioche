@@ -1,4 +1,5 @@
 import { Session } from "../io/input";
+import { dataToResponse } from "../io/output";
 import { DurableObjectStore } from "../storage/durableobjectstore";
 import { createStorageProxy } from "../storage/storage";
 import { WorkerController } from "./workercontroller";
@@ -36,7 +37,7 @@ export abstract class DurableObjectController extends WorkerController{
         console.log(`------- EVENT RECEIVED AT ${this.state.id} DURABLE OBJECT -------`);
         
         // Execute the method on the DO and save the response
-        const r_val: Response = await this[targetHandler](session, session);
+        const r_val: Response = dataToResponse(await this[targetHandler](session, session));
         
         // Log exit of DO
         console.log("-------   END OF EXECUTION AT DURABLE OBJECT   -------");

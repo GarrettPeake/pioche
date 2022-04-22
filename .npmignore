@@ -16,3 +16,5 @@ readme_logo.png
 rollup.config.js
 tsconfig.json
 /src
+/debug
+/types

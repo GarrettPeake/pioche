@@ -17,7 +17,7 @@ export abstract class WorkerController{
     }
 
     addKVBindings(){
-        (this.constructor as any).KVBinds.entries.forEach(([key, value]) => {
+        (this.constructor as any).KVBinds?.entries.forEach(([key, value]) => {
             this[key] = createStorageProxy(new KVStore(value));
         });
     }

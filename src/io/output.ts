@@ -20,12 +20,14 @@ export function dataToResponse(data: any): Response{
     }
 
     // Check for object shaped response
-    const {status, statusText, body, headers, webSocket, ...other} = data;
-    if(status || statusText || body || headers || webSocket && !other){ // We have a object shaped response
-        return new Response( // Options will be destructured correctly in the constructor
-            typeof body === "object" ? JSON.stringify(body) : String(body),
-            data
-        );
+    if(typeof data === "object"){
+        const {status, statusText, body, headers, webSocket, ...other} = data;
+        if(status || statusText || body || headers || webSocket && !other){ // We have a object shaped response
+            return new Response( // Options will be destructured correctly in the constructor
+                typeof body === "object" ? JSON.stringify(body) : String(body),
+                data
+            );
+        }
     }
 
     // Format a correct response

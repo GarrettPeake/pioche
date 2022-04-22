@@ -55,7 +55,7 @@ export class InboundRequest {
         this.method = (request.method.toUpperCase() as HTTPMethod);
         this.url = new URL(String(request.url));
         this.host = this.url.hostname;
-        this.pathname = this.url.pathname;
+        this.pathname = decodeURI(this.url.pathname);
         this.query = Object.fromEntries(new URLSearchParams(this.url.search));
         this.headers = request.headers;
     }
@@ -80,11 +80,13 @@ export class InboundRequest {
      * @param target The target function to be called within the durable object
      * @returns A request object to be executed
      */
-    createTargetRequest(target: string): Request{
+    async createTargetRequest(target: string): Promise<Request>{
         return new Request(this.url.toString(), {
+            method: "POST",
             headers: this.headers,
             body: JSON.stringify({
-                originalContent: this.body,
+                originalMethod: this.method,
+                originalContent: await this.body(),
                 params: this.params,
                 target: target
             })
@@ -96,12 +98,16 @@ export class InboundRequest {
      * @returns The target handler method for the DO to execute
      */
     async parseTargetRequest(): Promise<string>{
+        let reversedRequest = this.request.clone();
+        // TODO: We need the session.request.request to be equivalent to the original
         const json = await this.json();
+        console.log(json);
         this.params = json.params;
-        const target = (json.target as string);
-        this.json = json.originalContent;
-        this.body = json.originalContent;
-        return target;
+        this.method = json.originalMethod;
+        this.#cache_json = json.originalContent; // TODO: Ensure original is JSON format
+        this.#cache_body = json.originalContent;
+        this.request = reversedRequest;
+        return json.target;
     }
 }
 
