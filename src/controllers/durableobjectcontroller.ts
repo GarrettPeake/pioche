@@ -12,7 +12,7 @@ import { WorkerController } from "./workercontroller";
  */
 export abstract class DurableObjectController extends WorkerController{
 
-    storage: DurableObjectStore; // TODO: We want this to be both any and typed...
+    storage: any;
     state: DurableObjectState;
 
     /**
@@ -34,7 +34,7 @@ export abstract class DurableObjectController extends WorkerController{
         const targetHandler = await session.request.parseTargetRequest();
 
         // Log Entry into the DO
-        console.log(`------- EVENT RECEIVED AT ${this.state.id} DURABLE OBJECT -------`);
+        console.log(`=== DO Executing ${this.constructor.name}.${targetHandler} ===`);
         
         // Execute the method on the DO and save the response
         const r_val: Response = dataToResponse(await this[targetHandler](session, session));
