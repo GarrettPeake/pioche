@@ -59,10 +59,13 @@ export class Router{
         let response: Promise<any> = undefined;
         // Check if we're routing to a D/O
         if(targetRoute.controller instanceof DurableObjectController){
-            // Call the function which generates our DO target
+            // Gather the DO namespace we're targeting
             const targetNS: DurableObjectNamespace = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace);
+            // Attempt to gather targeting object if dev has specified
             const targetDO = (targetRoute.controller as any).DOTarget?.(targetNS, session, session);
+            // Base target the default id
             let targetID: DurableObjectId = targetNS.idFromName("default");
+            // If we received targeting info use it
             if (targetDO?.name){
                 targetID = targetNS.idFromName(targetDO.name);
             } else if (targetDO?.idstring){
@@ -70,11 +73,12 @@ export class Router{
             } else if (targetDO?.id){
                 targetID = targetDO.id;
             }
+            // Construct the DO stub to call upon
             const remoteObject = targetNS.get(targetID);
-            // Pass the request to the Durable Object
+            // Generate a targeted request to avoid routing again and pass it off
             response = remoteObject.fetch(await session.request.createTargetRequest(targetRoute.propertyKey));
-        } else {
-            const targetController = new (targetRoute.controller as any).constructor();
+        } else { // Routing to a local Controller function
+            const targetController = new (targetRoute.controller as any).constructor(globalThis.env);
             targetController.addKVBindings();
             response = targetController[targetRoute.propertyKey](session, session);
         }
