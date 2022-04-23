@@ -35,8 +35,8 @@ export class Router{
     }
 
     static async route(session: Session): Promise<any>{
-        // Find the registered route matching the session
         let targetRoute: Routing = undefined;
+        // Check each route for a match
         for(const route of Router.routes){
             if(route.method === session.request.method || route.method === "ANY"){
                 console.log("Method match:", route.route);

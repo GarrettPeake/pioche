@@ -20,7 +20,7 @@ export class Session{
     };
 
     constructor(request: Request){
-        this.request = new InboundRequest(request); // TODO: Find balance between async await and contruction
+        this.request = new InboundRequest(request);
         this.client = new Client(this.request);
         this.sessionid = this.request.headers?.["cf-ray"];
         this.logger = new Logger(this.sessionid);

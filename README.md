@@ -29,16 +29,31 @@ To install just run
 ```
 npm install pioche
 ```
-Then to implement the features just use them as you would normal pioche controllers and middleware
+Then to create a program you'll need a main file as follows
 ```ts
-import { CustomController } from 'controllers/customcontroller';
-export { CustomController } from 'controllers/customcontroller';
-import { Router, DefaultHandlers } from 'pioche';
+import { HelloWorldController } from 'controllers/customcontroller';
+// If the controller is a durable object we need to export it
+export { HelloWorldController } from 'controllers/customcontroller';
+// Import the default handlers from pioche
+import { DefaultHandlers } from 'pioche';
 
-Router.register(CustomController, {binding = "CUSTOMBIND"});
+HelloWorldController; // This prevents rollup from purging it as unused code
 
-export default DefaultHandlers;
+export default DefaultHandlers; // Export pioches handlers
 ```
+And we can create said controller as follows
+```ts
+import { BaseMap, GetMap, DurableObjectController, Session } from "pioche";
+
+@BaseMap("/hello") //
+export class HelloWorldController extends DurableObjectController{
+  @GetMap("/:name")
+  async helloWorld(session: Session){
+    return `Hello, ${session.request.params.name}!`
+  }
+}
+```
+After deploying this to Cloudflare, example.workers.dev/hello/Greg will return: `Hello, Greg!`
 
 ## 📕 Background and why Pioche Exists
 
