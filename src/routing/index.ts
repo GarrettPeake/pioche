@@ -36,7 +36,7 @@ function subMap(method: HTTPMethod, route: string, enabled: boolean) { // Decora
  * @param DOBinding Optional binding used for DurableObjectControllers
  * @param enabled Optioanl parameter allowing for controller Mappings to be disabled
  */
-export function BaseMap(base: string, {host = "", DOBinding = undefined, enabled = true} = {}) {
+export function BaseMap(base: string, {host = ":host*", DOBinding = undefined, enabled = true} = {}) {
     return function (target: any) {
         if(target.routes && enabled){
             target.routes.forEach((route: Routing) => {

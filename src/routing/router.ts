@@ -44,14 +44,14 @@ export class Router{
             if(route.method === session.request.method || route.method === "ANY"){
                 console.log("Method match:", route.route);
                 const params = [];
-                const regex = pathToRegexp(route.route, params); // TODO: Can we precompile regexps during build step?
-                const parsed = regex.exec(session.request.pathname); // TODO: We need to check the optional host
+                const regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step?
+                const parsed = regex.exec(session.request.url.hostname + session.request.pathname); // TODO: We need to check the optional host
                 if(parsed){
                     session.request.params = {};
                     params.forEach((p, i) => {
                         session.request.params[p.name] = parsed[i+1];
                     });
-                    console.log(`Matched ${route.route} route with params: `, JSON.stringify(session.request.params));
+                    console.log(`Matched ${route.host}${route.route} route with params: `, JSON.stringify(session.request.params));
                     targetRoute = route;
                     break;
                 }

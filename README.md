@@ -16,7 +16,7 @@ Note: To use all features of Pioche, you need a Cloudflare account with [Durable
  - [x] Decorator-based path-to-regexp router
  - [ ] Middleware support
  - [ ] Simplified, more powerful API for D/O Storage and KV  
- - [x] Simplified KV + D/O interaction
+ - [x] Simplified Worker -> D/O interaction
  - [x] WebSocket handling
  - [x] Minimized invokations and compute time  
 ## 🔋 Tree Shakeable Batteries Available in [pioche-extras](https://github.com/GarrettPeake/pioche-extras)
