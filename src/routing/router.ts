@@ -89,6 +89,7 @@ export class Router{
                 });
             } else { // Routing to a local Controller function
                 const targetController = new (targetRoute.controller as any).constructor(globalThis.env);
+                session.logger.live = targetController.liveLogging;
                 targetController.addKVBindings();
                 response = await targetController[targetRoute.propertyKey](session, response);
             }

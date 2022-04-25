@@ -33,6 +33,18 @@ export abstract class WebsocketController extends DurableObjectController {
     }
 
     /**
+     * Gracefully close the logger and remove the session
+     * from the session list
+     * @param session 
+     */
+    async closeSession(session: Session){
+        session.logger.close(); // Close logger
+        session.websocket.socket.close(1011, "WebSocket broken"); // Close websocket
+        session.websocket.ended = true;
+        this.sessions = this.sessions.filter((member) => member !== session); // Purge session
+    }
+
+    /**
      * Send a message to all active websocket connections
      * @param message Message to be sent to all active sessions
      */
@@ -43,59 +55,50 @@ export abstract class WebsocketController extends DurableObjectController {
         }
 
         // Iterate over all the sessions sending them messages or removing them
-        this.sessions = this.sessions.filter((session) => {
+        this.sessions.forEach((session) => {
             if(this.receiveBroadcast(session, message)){
                 if (session.websocket.connected) {
                     try {
                         session.websocket.socket.send(message);
-                        return true;
                     } catch (err) {
-                        session.websocket.ended = true;
-                        return false;
+                        this.closeSession(session);
                     }
-                } else {
-                    // user hasn't finished connecting
+                } else { // User hasn't finished connecting
                     session.websocket.rQueue.push(message);
-                    return true;
                 }
             }
-            return true; // User doesn't get broadcast but may still be connected
         });
     }
 
     async addListeners(session: Session) {
         session.websocket.socket.accept();
+        session.websocket.connected = true;
         this.sessions.push(session);
 
         // Set event handlers to receive messages.
         session.websocket.socket.addEventListener("message", async (msg: any) => {
-            if(!session.websocket.connected){
-                try {
-                    if (session.websocket.ended) {
-                        session.websocket.socket.close(1011, "WebSocket broken.");
-                        return;
+            if(!session.websocket.initialized){
+                try{
+                    if(session.websocket.tQueue){
+                        session.websocket.tQueue.forEach((queued) => {
+                            session.websocket.socket.send(queued);
+                        });
+                        session.websocket.tQueue = [];
                     }
-                    // Send the queue
-                    session.websocket.rQueue.forEach((queued) => {
-                        session.websocket.socket.send(queued);
-                    });
-                    delete session.websocket.rQueue;
-                    // Send a ready message
-                    session.websocket.socket.send(JSON.stringify({ ready: true }));
-                } catch (err:any) {
+                }catch{
                     session.websocket.socket.send(
                         JSON.stringify({ message: "An error occurred during initialization" })
                     );
+                    this.closeSession(session);
                 }
+                session.websocket.initialized = true;
             }
-            session.websocket.connected = true;
             this.messageHandler(session, msg.data);
         });
 
         // On "close" and "error" events, remove the WebSocket from the sessions list and broadcast
         const closeOrErrorHandler = () => {
-            session.websocket.ended = true;
-            this.sessions = this.sessions.filter((member) => member !== session);
+            this.closeSession(session);
         };
         session.websocket.socket.addEventListener("close", closeOrErrorHandler);
         session.websocket.socket.addEventListener("error", closeOrErrorHandler);
@@ -106,5 +109,4 @@ export abstract class WebsocketController extends DurableObjectController {
 
     // Defines whether a user should receive a broadcast
     abstract receiveBroadcast(session: Session, message: string): boolean;
-
 }

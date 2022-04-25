@@ -30,6 +30,7 @@ export abstract class DurableObjectController extends WorkerController{
     async fetch(request: Request){
         // Generate the session object
         const session = new Session(request);
+        session.logger.live = this.liveLogging;
         // Undo the request targeting within the request object
         const targetHandler = await session.request.parseTargetRequest();
 
@@ -43,8 +44,9 @@ export abstract class DurableObjectController extends WorkerController{
         // Log exit of DO
         console.log("=== DO Execution Finished ===");
 
-        // Exit the logger gracefully
-        session.logger.close();
+        // Exit the logger gracefully if this is the end of the session
+        if(!response.webSocket)
+            session.logger.close();
         
         return response.toResponse();
     }
