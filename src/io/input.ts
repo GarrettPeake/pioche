@@ -3,7 +3,7 @@ import { Logger } from "../logging/logger";
 import { HTTPMethod } from "../types";
 
 
-export class Session{
+export class Session {
     client: Client;
     request: InboundRequest;
     logger: Logger;
@@ -112,5 +112,7 @@ export class InboundRequest {
 }
 
 export function AcceptContent(type: string){
-    console.log("TODO: Accept functionality not implemented");
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        descriptor.value = (...args: any) => {return "TODO: acept functionality not supported yet"};
+    };
 }

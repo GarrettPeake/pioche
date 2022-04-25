@@ -19,6 +19,9 @@ export class Logger{
     constructor(groupingid: string, {live = false} = {}){
         this.live = live;
         this.groupingid = groupingid;
+        // Note: Date.now() gives the timestamp of last io event
+        // the timestamps on the messages can therefore be used to
+        // order the messages, but not to benchmark performance
         this.lastts = Date.now();
         this.env = globalThis.env;
     }
@@ -44,14 +47,14 @@ export class Logger{
 
     async _post(messages: message[]){
         // Generate a request that will get properly routed on the other end
-        const id = globalThis.env.LOGS.idFromName("logserver");
-        const logserver = globalThis.env.LOGS.get(id);
-        await logserver.fetch("https://www.dummy-url.com/logs", {
-            method: "POST",
-            body: JSON.stringify({
-                groupingid: this.groupingid,
-                messages: messages
-            })
-        });
+        // const id = globalThis.env.LOGS.idFromName("logserver");
+        // const logserver = globalThis.env.LOGS.get(id);
+        // await logserver.fetch("https://www.dummy-url.com/logs", {
+        //     method: "POST",
+        //     body: JSON.stringify({
+        //         groupingid: this.groupingid,
+        //         messages: messages
+        //     })
+        // });
     }
 }

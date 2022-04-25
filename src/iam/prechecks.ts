@@ -6,5 +6,7 @@
  * @returns boolean whether check passed
  */
 export function checkPerms(event, requirements){
-    console.log("TODO: checkPerms Function not implement");
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        descriptor.value = (...args: any) => {return "TODO: Adding status codes like this not supported yet"};
+    };
 }

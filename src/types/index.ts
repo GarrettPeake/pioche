@@ -34,3 +34,12 @@ export interface DOTarget {
     idstring?: string;
     id?: DurableObjectId;
 }
+
+/** Defines the shape of an object which defines a Response*/
+export interface ResponseObject {
+    status?: number,
+    statusText?: string,
+    body?: any,
+    headers?: Headers,
+    webSocket?: WebSocket
+}

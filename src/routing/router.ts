@@ -3,7 +3,7 @@ import { Endware, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
 import { pathToRegexp, match, parse, compile } from "path-to-regexp";
-import { dataToResponse } from "../io/output";
+import { OutboundResponse } from "../io/output";
 
 /**
  * A router class implementing path-to-regexp
@@ -35,8 +35,11 @@ export class Router{
     }
 
     static async route(session: Session): Promise<any>{
+        // Generate our response object to be passed around
+        let response = new OutboundResponse();
+
+        // ==== Find the matching route if any ====
         let targetRoute: Routing = undefined;
-        // Check each route for a match
         for(const route of Router.routes){
             if(route.method === session.request.method || route.method === "ANY"){
                 console.log("Method match:", route.route);
@@ -55,38 +58,44 @@ export class Router{
             }
         }
         if(!targetRoute)
-            return new Response(null, {status: 404});
-        // TODO: Enact all middleware on the request
-        
-        // Route the request
-        let response: Promise<any> = undefined;
-        // Check if we're routing to a D/O
-        if(targetRoute.controller instanceof DurableObjectController){
-            // Gather the DO namespace we're targeting
-            const targetNS: DurableObjectNamespace = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace);
-            // Attempt to gather targeting object if dev has specified
-            const targetDO = (targetRoute.controller as any).DOTarget?.(targetNS, session, session);
-            // Base target the default id
-            let targetID: DurableObjectId = targetNS.idFromName("default");
-            // If we received targeting info use it
-            if (targetDO?.name){
-                targetID = targetNS.idFromName(targetDO.name);
-            } else if (targetDO?.idstring){
-                targetID = targetNS.idFromString(targetDO.idstring);
-            } else if (targetDO?.id){
-                targetID = targetDO.id;
+            response.fromObj({status: 404});
+    
+        // ==== Route the request ====
+        if(targetRoute){
+            // TODO: Enact all middleware on the request, we don't want to use middleware on a 404
+
+            if(targetRoute.controller instanceof DurableObjectController){ // Check if we're routing to a D/O
+                // Gather the DO namespace we're targeting
+                const targetNS: DurableObjectNamespace = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace);
+                // Attempt to gather targeting object if dev has specified
+                const targetDO = (targetRoute.controller as any).DOTarget?.(targetNS, session, session);
+                // Base target the default id
+                let targetID: DurableObjectId = targetNS.idFromName("default");
+                // If we received targeting info use it
+                if (targetDO?.name){
+                    targetID = targetNS.idFromName(targetDO.name);
+                } else if (targetDO?.idstring){
+                    targetID = targetNS.idFromString(targetDO.idstring);
+                } else if (targetDO?.id){
+                    targetID = targetDO.id;
+                }
+                // Construct the DO stub to call upon
+                const remoteObject = targetNS.get(targetID);
+                // Generate a targeted request to avoid routing again and pass it off
+                response = new OutboundResponse({
+                    resp: await remoteObject.fetch(
+                        await session.request.createTargetRequest(targetRoute.propertyKey)
+                    )
+                });
+            } else { // Routing to a local Controller function
+                const targetController = new (targetRoute.controller as any).constructor(globalThis.env);
+                targetController.addKVBindings();
+                response = await targetController[targetRoute.propertyKey](session, response);
             }
-            // Construct the DO stub to call upon
-            const remoteObject = targetNS.get(targetID);
-            // Generate a targeted request to avoid routing again and pass it off
-            response = remoteObject.fetch(await session.request.createTargetRequest(targetRoute.propertyKey));
-        } else { // Routing to a local Controller function
-            const targetController = new (targetRoute.controller as any).constructor(globalThis.env);
-            targetController.addKVBindings();
-            response = targetController[targetRoute.propertyKey](session, session);
         }
-        // TODO: Enact all endware on the response
-        const validResponse: Response = dataToResponse(await response);
-        return validResponse;
+        // TODO: Enact all endware on the response, this should be done for 404's
+
+        // Turn whatever data the controller gave us into a response
+        return response.toResponse();
     }
 }

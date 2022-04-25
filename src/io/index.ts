@@ -1,2 +1,2 @@
 export * from "./input";
-export { HttpCode, Header } from "./output";
+export { OutboundResponse } from "./output";

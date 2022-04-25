@@ -1,5 +1,5 @@
 import { Session } from "../io/input";
-import { dataToResponse } from "../io/output";
+import { OutboundResponse } from "../io/output";
 import { DurableObjectStore } from "../storage/durableobjectstore";
 import { createStorageProxy } from "../storage/storage";
 import { WorkerController } from "./workercontroller";
@@ -37,14 +37,15 @@ export abstract class DurableObjectController extends WorkerController{
         console.log(`=== DO Executing ${this.constructor.name}.${targetHandler} ===`);
         
         // Execute the method on the DO and save the response
-        const r_val: Response = dataToResponse(await this[targetHandler](session, session));
+        const response = new OutboundResponse();
+        await this[targetHandler](session, response);
         
         // Log exit of DO
-        console.log("-------   END OF EXECUTION AT DURABLE OBJECT   -------");
+        console.log("=== DO Execution Finished ===");
 
         // Exit the logger gracefully
         session.logger.close();
         
-        return r_val;
+        return response.toResponse();
     }
 }
