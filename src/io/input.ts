@@ -1,13 +1,12 @@
-import { Client } from "../iam";
 import { Logger } from "../logging/logger";
 import { HTTPMethod } from "../types";
 
 
 export class Session {
-    client: Client;
-    request: InboundRequest;
-    logger: Logger;
-    sessionid: string;
+    public jwt: object; // TODO: Define a JWT class
+    readonly request: InboundRequest;
+    readonly logger: Logger;
+    readonly sessionid: string;
     websocket = {
         socket: undefined,
         connected: false,
@@ -19,11 +18,27 @@ export class Session {
         startTime: Date.now()
     };
 
-    constructor(request: Request){
-        this.request = new InboundRequest(request);
-        this.client = new Client(this.request);
+    constructor(request: Request | any){
+        // Construct the request object based on the session
+        if(request instanceof Request){
+            this.request = new InboundRequest(request.clone());
+        } else {
+            this.request = new InboundRequest(request.request);
+            this.websocket = request.websocket;
+        }
         this.sessionid = this.request.headers?.["cf-ray"];
         this.logger = new Logger(this.sessionid);
+    }
+
+    /**
+     * Turn this instance into a JSON string for transfer between Worker and Durable Objects
+     * @returns A JSON parsable string representation of this object
+     */
+    async toJSON(): Promise<object>{
+        return {
+            websocket: this.websocket,
+            request: await this.request.toJSON() // request, client, sessionid, logger all build from request
+        };
     }
 
     /**
@@ -39,75 +54,71 @@ export class Session {
 
 export class InboundRequest {
 
-    request: Request = undefined;
-    method: HTTPMethod = undefined;
-    url: URL = undefined;
-    host: string = undefined;
-    pathname: string = undefined;
-    params: object = undefined;
-    query: object = undefined;
-    headers: Headers = undefined;
-    #cache_body: string = undefined;
-    #cache_json: object = undefined;
+    readonly request: Request = undefined; // DONE
+    readonly method: HTTPMethod = undefined; // DONE
+    readonly url: URL = undefined; // DONE
+    readonly host: string = undefined;
+    readonly pathname: string = undefined;
+    readonly query: object = undefined;
+    public params: object = undefined;
+    readonly headers: Headers = undefined;
+    private cache_body: string = undefined;
+    private cache_json: object = undefined;
 
-    constructor(request: Request){
-        this.request = request;
+    constructor(request: Request | any){
+        if(request instanceof Request){
+            this.request = request.clone();
+            this.headers = request.headers;
+        } else {
+            // JSON object will have method, url, params, headers, body
+            this.headers = new Headers();
+            request.headers.forEach(([name, value]) => {
+                this.headers.append(name, value);
+            });
+            this.request = new Request(request.url, {
+                body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body,
+                headers: this.headers,
+                method: request.method
+            });
+            this.params = request.params;
+            this.cache_body = request.body;
+        }
         this.method = (request.method.toUpperCase() as HTTPMethod);
         this.url = new URL(String(request.url));
         this.host = this.url.hostname;
         this.pathname = decodeURI(this.url.pathname);
         this.query = Object.fromEntries(new URLSearchParams(this.url.search));
-        this.headers = request.headers;
     }
 
     async body(): Promise<string>{
-        if(this.#cache_body === undefined)
-            this.#cache_body = await this.request.text();
-        return this.#cache_body;
+        if(this.cache_body === undefined)
+            this.cache_body = await this.request.text();
+        return this.cache_body;
     }
 
     async json(): Promise<any>{
-        if(this.#cache_json === undefined){
-            if(this.#cache_body === undefined)
-                this.#cache_body = await this.request.text();
-            this.#cache_json = JSON.parse(this.#cache_body);
+        if(this.cache_json === undefined){
+            if(this.cache_body === undefined)
+                this.cache_body = await this.request.text();
+            this.cache_json = JSON.parse(this.cache_body);
         }
-        return this.#cache_json;
+        return this.cache_json;
     }
 
     /**
-     * Create a request to forward the currently executing request to the correct durable object
-     * @param target The target function to be called within the durable object
-     * @returns A request object to be executed
+     * Turn this instance into a JSON string for transfer between Worker and Durable Objects  
+     * **NOTE**: The generated string will include all data to rebuild the original request 
+     * @returns A JSON representation of this object
      */
-    async createTargetRequest(target: string): Promise<Request>{
-        return new Request(this.url.toString(), {
-            method: "POST",
-            headers: this.headers,
-            body: JSON.stringify({
-                originalMethod: this.method,
-                originalContent: await this.body(),
-                params: this.params,
-                target: target
-            })
-        });
-    }
-
-    /**
-     * Assumes itself is a targeted request and undoes it
-     * @returns The target handler method for the DO to execute
-     */
-    async parseTargetRequest(): Promise<string>{
-        let reversedRequest = this.request.clone();
-        // TODO: We need the session.request.request to be equivalent to the original
-        const json = await this.json();
-        console.log(json);
-        this.params = json.params;
-        this.method = json.originalMethod;
-        this.#cache_json = json.originalContent; // TODO: Ensure original is JSON format
-        this.#cache_body = json.originalContent;
-        this.request = reversedRequest;
-        return json.target;
+    async toJSON(): Promise<object>{
+        // This should contain all information from the original request
+        return {
+            method: this.method,
+            url: this.url.toString(),
+            params: this.params, // Generated by Router
+            headers: [...this.headers.entries()],
+            body: await this.body()
+        };
     }
 }
 

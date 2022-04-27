@@ -28,18 +28,17 @@ export abstract class DurableObjectController extends WorkerController{
     }
 
     async fetch(request: Request){
-        // Generate the session object
-        const session = new Session(request);
+        // Generate the (session, response) pair
+        const json: any = await request.json();
+        const session = new Session(json.session);
         session.logger.live = this.liveLogging;
-        // Undo the request targeting within the request object
-        const targetHandler = await session.request.parseTargetRequest();
+        const response = new OutboundResponse(json.response);
 
         // Log Entry into the DO
-        console.log(`=== DO Executing ${this.constructor.name}.${targetHandler} ===`);
+        console.log(`=== DO Executing ${this.constructor.name}.${json.target} ===`);
         
         // Execute the method on the DO and save the response
-        const response = new OutboundResponse();
-        await this[targetHandler](session, response);
+        await this[json.target](session, response);
         
         // Log exit of DO
         console.log("=== DO Execution Finished ===");
@@ -48,6 +47,19 @@ export abstract class DurableObjectController extends WorkerController{
         if(!response.webSocket)
             session.logger.close();
         
-        return response.toResponse();
+        /* 
+        * **Note to Contributors**: I can't think of any reasons WebSockets can't just receive special
+        * treatment and be sent back like this then bypassing endware. Honestly I just couldn't serialize
+        * them to allow me to send them back. If you can think of a reason not to do this or a way to
+        * transmit them, please open an issue
+        */
+        if(response.status === 101){ 
+            return new Response(null, { status: 101, webSocket: response.webSocket });
+        }
+
+        return new Response(JSON.stringify({
+            session: await session.toJSON(),
+            response: response.toJSON()
+        }));
     }
 }

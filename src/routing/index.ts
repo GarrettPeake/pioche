@@ -2,7 +2,8 @@ export { Router } from "./router";
 export * from "./delegator";
 
 import { WorkerController, DurableObjectController } from "../controllers";
-import { HTTPMethod, Routing } from "../types";
+import { OutboundResponse, Session } from "../io";
+import { DOTarget, HTTPMethod, Routing } from "../types";
 import { Router } from "./router";
 
 /**
@@ -86,4 +87,16 @@ export function PatchMap(route: string, {enabled = true} = {}){
 }
 export function AnyMap(route: string, {enabled = true} = {}){
     return subMap("ANY", route, enabled);
+}
+
+/** Add a function telling the controller which D/O to route to */
+export function TargetDO(
+    targeter: DOTarget | // Allow a simple @DOTarget({name: 'example'})
+    ((session: Session, response: OutboundResponse, targetNS: DurableObjectNamespace) => DOTarget)){
+    return (target: any) => {
+        // Add the targeter as a static property of the class
+        target.TargetDO = (session: Session, response: OutboundResponse, targetNS: DurableObjectNamespace) => {
+            return (typeof targeter === "function") ? targeter(session, response, targetNS) : targeter;
+        };
+    };
 }

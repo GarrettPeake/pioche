@@ -7,7 +7,7 @@ import { createStorageProxy } from "../storage/storage";
  */
 export abstract class WorkerController{
 
-    liveLogging = false; // TODO: Whether to post each log as they come in
+    liveLogging = false; // Whether to stream logs or send a post-run "transcript"
     env: any = {}; // Set by fetch functions on each host
 
     constructor(env: any){

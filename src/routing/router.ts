@@ -1,5 +1,5 @@
 import { WorkerController } from "../controllers/workercontroller";
-import { Endware, Middleware, Routing } from "../types";
+import { DOTarget, Endware, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
 import { pathToRegexp, match, parse, compile } from "path-to-regexp";
@@ -58,19 +58,19 @@ export class Router{
             }
         }
         if(!targetRoute)
-            response.fromObj({status: 404});
+            response.status = 404;
+        // TODO: Enact all middleware on the request
     
         // ==== Route the request ====
         if(targetRoute){
-            // TODO: Enact all middleware on the request, we don't want to use middleware on a 404
-
-            if(targetRoute.controller instanceof DurableObjectController){ // Check if we're routing to a D/O
+            // Route the request to Durable Object if needed
+            if(targetRoute.controller instanceof DurableObjectController){
                 // Gather the DO namespace we're targeting
-                const targetNS: DurableObjectNamespace = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace);
-                // Attempt to gather targeting object if dev has specified
-                const targetDO = (targetRoute.controller as any).DOTarget?.(targetNS, session, session);
+                const targetNS = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace);
+                // Gather DEV
+                const targetDO: DOTarget = (targetRoute.controller as any).TargetDO?.(session, response, targetNS);
                 // Base target the default id
-                let targetID: DurableObjectId = targetNS.idFromName("default");
+                let targetID = targetNS.idFromName("default");
                 // If we received targeting info use it
                 if (targetDO?.name){
                     targetID = targetNS.idFromName(targetDO.name);
@@ -81,12 +81,24 @@ export class Router{
                 }
                 // Construct the DO stub to call upon
                 const remoteObject = targetNS.get(targetID);
-                // Generate a targeted request to avoid routing again and pass it off
-                response = new OutboundResponse({
-                    resp: await remoteObject.fetch(
-                        await session.request.createTargetRequest(targetRoute.propertyKey)
-                    )
-                });
+                // Serialize (session, response) and append the targeted controller method
+                const resp: Response = await remoteObject.fetch(new Request("https://www.dummy-url.com", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        target: targetRoute.propertyKey,
+                        session: await session.toJSON(),
+                        response: response.toJSON()
+                    })
+                }));
+                // **NOTE TO CONTRIBUTORS**: Read note in DurableObjectController.fetch() for reasoning
+                // We treat websockets specially, bypassing endware
+                if(resp.status === 101){
+                    return resp;
+                }
+                // Deserialize the data from the durable object back into (session, response)
+                const respJson: any = await resp.json();
+                session = new Session(respJson.session);
+                response = new OutboundResponse({json: respJson.response});
             } else { // Routing to a local Controller function
                 const targetController = new (targetRoute.controller as any).constructor(globalThis.env);
                 session.logger.live = targetController.liveLogging;

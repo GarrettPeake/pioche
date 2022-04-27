@@ -1,3 +1,4 @@
+import { OutboundResponse } from "../io";
 import { Session } from "../io/input";
 import { DurableObjectController } from "./durableobjectcontroller";
 
@@ -21,15 +22,20 @@ export abstract class WebsocketController extends DurableObjectController {
     }
 
     // Gets an upgrade response for the given websocket
-    async assertUpgrade(session: Session){
+    async assertUpgrade(session: Session, response: OutboundResponse){
         // Check request structure
-        if (session.request.headers["upgrade"] !== "websocket")
-            return {code: 426, body: "Must provide Upgrade header with value 'websocket'"};
+        if (session.request.headers.get("upgrade") !== "websocket"){
+            response.status = 426;
+            response.body = "Must provide Upgrade header with value 'websocket'";
+            return false;
+        }
         // Give the user a websocket
         const pair = new WebSocketPair();
         session.websocket.socket = pair[1];
         await this.addListeners(session);
-        return new Response(null, { status: 101, webSocket: pair[0] });
+        response.status = 101;
+        response.webSocket = pair[0];
+        return true;
     }
 
     /**
@@ -57,14 +63,14 @@ export abstract class WebsocketController extends DurableObjectController {
         // Iterate over all the sessions sending them messages or removing them
         this.sessions.forEach((session) => {
             if(this.receiveBroadcast(session, message)){
-                if (session.websocket.connected) {
-                    try {
-                        session.websocket.socket.send(message);
-                    } catch (err) {
+                try {
+                    session.websocket.socket.send(message);
+                } catch (err) {
+                    if(session.websocket.initialized)
                         this.closeSession(session);
+                    else{
+                        session.websocket.tQueue.push(message);
                     }
-                } else { // User hasn't finished connecting
-                    session.websocket.rQueue.push(message);
                 }
             }
         });
