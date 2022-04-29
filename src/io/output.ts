@@ -6,7 +6,7 @@ export class OutboundResponse implements ResponseObject{
     private _status: number;
     headers: Headers;
     body: any;
-    webSocket: WebSocket;
+    websocket: WebSocket;
 
     constructor({json}: {json?: any} = {}){
         this.headers = new Headers();
@@ -16,7 +16,7 @@ export class OutboundResponse implements ResponseObject{
                 this.headers.append(name, value);
             });
             this.body = json.body;
-            // this.webSocket = json.webSocket; // TODO: HOW TO SERIALIZE WEBSOCKET
+            // this.websocket = json.websocket; // TODO: HOW TO SERIALIZE WEBSOCKET
         }
     }
 
@@ -32,11 +32,11 @@ export class OutboundResponse implements ResponseObject{
      * Set the parameters of the response based on a ResponseObject  
      * **WARNING**: This will overwrite any previously edited data
      */
-    fromObj({status, body, headers, webSocket}: ResponseObject): void{
+    fromObj({status, body, headers, websocket}: ResponseObject): void{
         this.status = status;
         this.body = body ? body : this.body;
         this.headers = headers ? headers : this.headers;
-        this.webSocket = webSocket ? webSocket : this.webSocket;
+        this.websocket = websocket ? websocket : this.websocket;
     }
 
     /**
@@ -59,7 +59,7 @@ export class OutboundResponse implements ResponseObject{
         // Get the headers from the response
         this.headers = touch.headers;
         // Get any websocket from the response
-        this.webSocket = undefined; // TODO: How can we reconstruct the websocket property?
+        this.websocket = undefined; // TODO: How can we reconstruct the websocket property?
     }
 
     /**
@@ -68,12 +68,20 @@ export class OutboundResponse implements ResponseObject{
      * * `status`  
      * * `body`  
      * * `headers`  
-     * * `webSocket`  
+     * * `websocket`  
      * 
      * Response objects will not be transformed  
      * Any type of other data will be placed in the body with a 200 code
      */
     toResponse(): Response{
+        /* 
+        * **Note to Contributors**: I can't think of any reasons WebSockets can't just receive special
+        * treatment and be sent back like this then bypassing endware. Honestly I just couldn't serialize
+        * them to allow me to send them back. If you can think of a reason not to do this or a way to
+        * transmit them, please open an issue
+        */
+        if(this.websocket)
+            return new Response(null, { status: 101, webSocket: this.websocket });
         // Construct a response based on the rest of our data
         return new Response(this.body ? 
             (typeof this.body === "object" ? JSON.stringify(this.body) : this.body.toString())
@@ -89,7 +97,7 @@ export class OutboundResponse implements ResponseObject{
             status: this._status,
             headers: [...this.headers.entries()],
             body: this.body,
-            // webSocket: this.webSocket // TODO: How to serialize and deserialize 
+            // websocket: this.websocket // TODO: How to serialize and deserialize 
         };
     }
 }

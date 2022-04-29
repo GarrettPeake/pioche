@@ -2,7 +2,7 @@ import { WorkerController } from "../controllers/workercontroller";
 import { DOTarget, Endware, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
-import { pathToRegexp, match, parse, compile } from "path-to-regexp";
+import { pathToRegexp } from "path-to-regexp";
 import { OutboundResponse } from "../io/output";
 
 /**

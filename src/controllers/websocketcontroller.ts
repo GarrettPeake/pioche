@@ -1,5 +1,4 @@
-import { OutboundResponse } from "../io";
-import { Session } from "../io/input";
+import { OutboundResponse, Session } from "../io";
 import { DurableObjectController } from "./durableobjectcontroller";
 
 
@@ -11,15 +10,6 @@ import { DurableObjectController } from "./durableobjectcontroller";
 export abstract class WebsocketController extends DurableObjectController {
 
     sessions: Session[] = [];
-
-    /**
-     * Dual local/remote constructor for Durable Objects
-     * @param state Name of intended Durable Object, optional
-     * @param env The global environment object
-     */
-    constructor(state: any | null = null, env: any | null = null){
-        super(state, env);
-    }
 
     // Gets an upgrade response for the given websocket
     async assertUpgrade(session: Session, response: OutboundResponse){
@@ -34,7 +24,7 @@ export abstract class WebsocketController extends DurableObjectController {
         session.websocket.socket = pair[1];
         await this.addListeners(session);
         response.status = 101;
-        response.webSocket = pair[0];
+        response.websocket = pair[0];
         return true;
     }
 

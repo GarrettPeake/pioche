@@ -44,18 +44,8 @@ export abstract class DurableObjectController extends WorkerController{
         console.log("=== DO Execution Finished ===");
 
         // Exit the logger gracefully if this is the end of the session
-        if(!response.webSocket)
+        if(!response.websocket)
             session.logger.close();
-        
-        /* 
-        * **Note to Contributors**: I can't think of any reasons WebSockets can't just receive special
-        * treatment and be sent back like this then bypassing endware. Honestly I just couldn't serialize
-        * them to allow me to send them back. If you can think of a reason not to do this or a way to
-        * transmit them, please open an issue
-        */
-        if(response.status === 101){ 
-            return new Response(null, { status: 101, webSocket: response.webSocket });
-        }
 
         return new Response(JSON.stringify({
             session: await session.toJSON(),

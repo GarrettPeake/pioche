@@ -40,5 +40,8 @@ export interface ResponseObject {
     status?: number,
     body?: any,
     headers?: Headers,
-    webSocket?: WebSocket
+    websocket?: WebSocket
 }
+
+/** Defines the shape of a view check */
+export type ViewCheck = (...vals: any[]) => ((val: any) => boolean)
