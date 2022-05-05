@@ -45,3 +45,8 @@ export interface ResponseObject {
 
 /** Defines the shape of a view check */
 export type ViewCheck = (...vals: any[]) => ((val: any) => boolean)
+
+// Types for storage API wrapper
+export type GetOptions<T>  = T extends DurableObjectStorage ? DurableObjectGetOptions : KVNamespaceGetOptions<any>;
+export type PutOptions<T>  = T extends DurableObjectStorage ? DurableObjectPutOptions : KVNamespacePutOptions;
+export type ListOptions<T> = T extends DurableObjectStorage ? DurableObjectListOptions : KVNamespaceListOptions;

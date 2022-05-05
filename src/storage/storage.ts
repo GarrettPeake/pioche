@@ -1,149 +1,122 @@
+import { GetOptions, ListOptions, PutOptions } from "../types";
+
 /**
  * Superclass for interacting with storage elements
  */
-export abstract class StorageElement{
-    
-    element: any = undefined;
+export abstract class StorageElement<T extends DurableObjectStorage | KVNamespace>{
 
-    constructor(element: string | KVNamespace | DurableObjectStorage){
+    protected element: T;
+    private handler: any;
+    private chain: any[] = [];
+  
+    constructor(element: T){
         this.element = element;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const thisRef = this;
+        this.handler = {
+            get(_: any, key:any): any{
+                thisRef.chain.push(key);
+                return new Proxy(thisRef.finalizerFactory(), this);
+            },
+            set(_: any, key: any, value: any): any {
+                thisRef.chain.push(key, "put");
+                thisRef.finalizerFactory()(value);
+                return true;
+            },
+            defineProperty(_: any, key: any, value: any): any {
+                thisRef.chain.push(key, "put");
+                thisRef.finalizerFactory()(value);
+                return true;
+            },
+            deleteProperty(_: any, key: any): any {
+                thisRef.chain.push(key, "remove");
+                thisRef.finalizerFactory()();
+                return true;
+            }
+        };
+        return new Proxy(
+            (this.finalizerFactory() as any as StorageElement<T>),
+            this.handler as any
+        );
     }
-
+  
+    private finalizerFactory(){
+        return (...args: any[]) => {
+            const currChain = [...this.chain];
+            this.chain = [];
+            const func = currChain.pop();
+            if(typeof (this as any)[func] === "function"){
+                if(currChain.length){ // We'll want to call the chain version
+                    return (this as any)["chain" + func](currChain, ...args);
+                } else { // Just call the regular version
+                    return (this as any)[func](...args);
+                }
+            } else {
+                throw Error(`Method ${func} does not exist on StorageElement`)
+            }
+        };
+    }
+  
     //============== GET FUNCTIONALITIES ============================
-    // storage.get(key, options?)
-    abstract get(
-        key: string | string[],
-        options: {
-            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions
-        }): {value: any, metadata: object}
-
-    // storage.c1.c2.get(options?)
-    abstract chainGet(
-        chain: any[],
-        options: {
-            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions
-        }): {value: any, metadata: object}
-
-
+    // `storage.get(key, options?)`
+    abstract get(key: string | string[], options: {getOptions: GetOptions<T>}): any;
+  
+    // `storage.c1.c2.get(options?)`
+    private chainget(chain: any[], options: {getOptions?: GetOptions<T>} = {}) {
+        return false;
+    }
+  
     //============== PUT FUNCTIONALITIES ============================
-    // If null generate a UUID and return it
-    abstract put(
-        key: string | null,
-        value: any,
-        options: {
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): boolean
-
-    // storage.c1.c2.put(object, options?)
-    // storage.c1.c2 = value: any;
-    abstract chainPut(
-        chain: string[],
-        value: any,
-        options: {
-            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): boolean; // Performs set, not spread
-
-    // storage.c1.c2.spread(object, options?)
+    // If null key, generate a UUID and return it
+    abstract put(key: string | null, value: any, options: {putOptions: PutOptions<T>}): boolean;
+  
+    // `storage.c1.c2.put(value: any, options?)` --or-- `storage.c1.c2 = value: any;`
+    private chainput(chain: any[], value: any, options: {getOptions?: GetOptions<T>, putOptions?: PutOptions<T>} = {}): boolean{
+        return false;
+    }
+  
+    // Just for intellisense
+    spread(value: any, options: {getOptions?: GetOptions<T>, putOptions?: PutOptions<T>} = {}) {
+        throw Error("Cannot call spread on storage object, must provide chain");
+    }
+    // `storage.c1.c2.spread(object, options?)`
     // if the chain is a single key and doesn't exist, make it
     // if the spreading object is an array, make it an array, and same for object
-    abstract chainSpread(
-        chain: string[],
-        value: object,
-        options: {
-            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): any; // Performs a {...newvals} and returns result
-
-
-    //============== DELETE FUNCTIONALITIES ============================
-    // storage.delete(key, options?)
-    abstract delete(
-        key: string | string[],
-        options: {
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): boolean
-
-    // storage.c1.c2.delete(key?, options?)
-    // delete storage.c1.c2
-    abstract chainDelete(
-        chain: string[],
-        options: {
-            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): boolean
-
-    // storage.deleteAll(options?)
-    abstract deleteAllKeys(
-        options: {
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): boolean
-
-    // storage.c1.c2.deleteAll(options?)
-    abstract chainDeleteAllKeys(
-        chain: string[],
-        options: {
-            getOptions: KVNamespaceGetOptions<any> | DurableObjectGetOptions,
-            putOptions: KVNamespacePutOptions | DurableObjectPutOptions
-        }): boolean
-
-
+    private chainspread(chain: any[], value: any, options: {getOptions?: GetOptions<T>, putOptions?: PutOptions<T>} = {}): boolean{
+        return false;
+    }
+  
+    //============== REMOVE FUNCTIONALITIES ============================
+    // `storage.remove(key, options?)`
+    abstract remove(key: string | string[], options: {putOptions?: PutOptions<T>}): boolean;
+  
+    // `storage.c1.c2.delete(key?, options?)` --or-- `remove storage.c1.c2`
+    private chainremove(chain: string[], options: {getOptions?: GetOptions<T>, putOptions?: PutOptions<T>} = {}): boolean {
+        return false;
+    }
+  
+    // `storage.removeAll(options?)`
+    abstract removeAll(options: {putOptions: PutOptions<T>}): boolean;
+  
+    // `storage.c1.c2.removeAll(options?)`
+    private chainremoveAll(chain: string[], options: {getOptions?: GetOptions<T>, putOptions?: PutOptions<T>} = {}): boolean {
+        return false;
+    }
+  
     //============== KEYS FUNCTIONALITIES ============================
-    // storage.keys(options?) If options is not provided, call the separate list() method, not list(null)
-    abstract keys(
-        options: {
-            listOptions: KVNamespaceListOptions | DurableObjectListOptions
-        }): {keys: string[], cursor: string, complete: boolean}
-    // storage.c1.c2.keys(options?)
-    abstract chainKeys(
-        chain: string[],
-        options: {
-            listOptions: KVNamespaceListOptions | DurableObjectListOptions
-        }): {keys: string[], cursor: string, complete: boolean}
-
-
+    // `storage.keys(options?)` If options is not provided, call the separate `list()` method, not `list(null)`
+    abstract keys(options: {listOptions?: ListOptions<T>}): {keys: string[], cursor: string, complete: boolean}
+  
+    // `storage.c1.c2.keys(options?)`
+    private chainkeys(chain: string[], options: {listOptions?: ListOptions<T>}={}): {keys: string[], cursor: string, complete: boolean} {
+        return {keys :[], cursor: "", complete: false};
+    }
+  
     //============== ITEMS FUNCTIONALITIES ============================
-    // storage.items(options?)
-    abstract items(
-        options: {
-            listOptions: KVNamespaceListOptions | DurableObjectListOptions
-        }): {keys: string[], cursor: string, complete: boolean}
-    // storage.c1.c2.items(options?)
-    abstract chainItems(
-        chain: string[],
-        options: {
-            listOptions: KVNamespaceListOptions | DurableObjectListOptions
-        }): {keys: string[], cursor: string, complete: boolean}
-}
-
-export function createStorageProxy(element: any){
-    const handler = {
-        chain: [],
-        resolve(target: any, func: string){ // Generate a passthrough function appending the chain
-            const currChain = [...this.chain];
-            const result = (...args: any) => target[func](currChain, ...args);
-            this.chain = [];
-            return result;
-        },
-        get(target:any, key:any): any{
-            if(typeof target[key] === "function"){
-                return this.resolve(target, key);
-            }
-            this.chain.push(key);
-            return new Proxy(target, this); // TODO: Can this just be "this"
-        },
-        set (target: any, key: any, value: any): any {
-            this.chain.push(key);
-            return this.resolve(target, "assign")(value);
-        },
-        defineProperty (target: any, key: any, value: any): any {
-            this.chain.push(key);
-            return this.resolve(target, "assign")(value);
-        },
-        deleteProperty (target: any, key: any): any {
-            this.chain.push(key);
-           return this.resolve(target, "remove")();
-        }
-    };
-    return new Proxy(element, handler);
+    // `storage.items(options?)`
+    abstract items(options: {listOptions?: ListOptions<T>}): {keys: string[], cursor: string, complete: boolean}
+    // `storage.c1.c2.items(options?)`
+    private chainitems(chain: string[], options: {listOptions?: ListOptions<T>}={}): {keys: string[], cursor: string, complete: boolean}{
+        return {keys :[], cursor: "", complete: false};
+    }
 }
