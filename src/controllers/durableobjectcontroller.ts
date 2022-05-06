@@ -24,6 +24,7 @@ export abstract class DurableObjectController extends WorkerController{
         this.state = state; // Access to the state object
         this.storage = new DurableObjectStore(state.storage); // Access to permanent storage
         this.addKVBindings();
+        (this as any).onCreate?.(state, env);
     }
 
     async fetch(request: Request){
@@ -32,6 +33,9 @@ export abstract class DurableObjectController extends WorkerController{
         const session = new Session(json.session);
         session.logger.live = this.liveLogging;
         const response = new OutboundResponse(json.response);
+
+        // Call lifecycle hook
+        (this as any).onRequest?.(session, response);
 
         // Log Entry into the DO
         console.log(`=== DO Executing ${this.constructor.name}.${json.target} ===`);

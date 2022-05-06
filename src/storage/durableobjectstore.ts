@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { StorageElement } from "./storage";
 
 /**
- * Superclass for interacting with storage elements
+ * Storage interface for Durable Object storage elements
  */
 export class DurableObjectStore extends StorageElement<DurableObjectStorage>{
 
@@ -10,9 +10,9 @@ export class DurableObjectStore extends StorageElement<DurableObjectStorage>{
         if(Array.isArray(key)){
             const rarr: any[] = [];
             for(const k of key){
-                rarr.push(await this.element.get(k, getOptions));
+                rarr.push(this.element.get(k, getOptions));
             }
-            return rarr;
+            return Promise.all(rarr);
         }
         return await this.element.get(key, getOptions);
     }

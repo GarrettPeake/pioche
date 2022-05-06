@@ -21,9 +21,9 @@ export class KVStore extends StorageElement<KVNamespace>{
         if(Array.isArray(key)){
             const rarr: any[] = [];
             for(const k of key){
-                rarr.push(await this.getActual(k.toString(), getOptions));
+                rarr.push(this.getActual(k.toString(), getOptions));
             }
-            return rarr;
+            return Promise.all(rarr);
         }
         return await this.getActual(key.toString(), getOptions);
     }
