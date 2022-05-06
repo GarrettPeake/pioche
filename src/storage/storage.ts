@@ -81,7 +81,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * ``` 
      * @param key The intended key or keys to retrieve (optional when chaining)
      * @param getOptions Get options
-     * @returns The value or list of values retrieved
+     * @returns A promise for the value or list of promises for values retrieved
      * @uses 
      * * KV:
      *   * Base: 1 x read / key
@@ -90,10 +90,10 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x read / key
      *   * Chain: 1 x read
      */
-    abstract get(key: any|any[], getOptions?: GetOptions<T>): any;
+    abstract get(key: any|any[], getOptions?: GetOptions<T>): Promise<any>;
   
     /** Chain implementation of get method */
-    private chainget(chain: any[], key?: any|any[], getOptions?: GetOptions<T>) {
+    private async chainget(chain: any[], key?: any|any[], getOptions?: GetOptions<T>): Promise<any> {
         return false;
     }
   
@@ -114,7 +114,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * @param value The value to associate with the key
      * @param getOptions Get options (chaining)
      * @param putOptions Put options
-     * @returns The key the value was written to or false if chain failed
+     * @returns A promise for the key the value was written to or false if chain failed
      * @uses 
      * * KV:
      *   * Base: 1 x write
@@ -123,11 +123,11 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x write
      *   * Chain: 1 x read + 1 x write
      */
-    abstract put(key: string, value: any, putOptions?: PutOptions<T>): any;
+    abstract put(key: string, value: any, putOptions?: PutOptions<T>): Promise<string>;
   
     /** Chain implementation of put method */
-    private chainput(chain: any[], value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): any{
-        return false;
+    private async chainput(chain: any[], value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<string>{
+        return "";
     }
 
     //===============================================================
@@ -146,7 +146,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * @param value The object to use (key, value) pairs from
      * @param getOptions Get options
      * @param putOptions Put options
-     * @returns boolean whether spread was successful
+     * @returns A promise for the post-spread object
      * @uses 
      * * KV:
      *   * Base: Not allowed
@@ -157,12 +157,13 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * @uses 1 x read, 1 x write
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    spread(value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>) {
+    async spread(value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<any> {
         throw new Error("Cannot call spread on storage object, must provide chain");
+        return {};
     }
     
     /** Chain implementation of spread method */
-    private chainspread(chain: any[], value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): boolean{
+    private async chainspread(chain: any[], value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<any>{
         return false;
     }
   
@@ -178,8 +179,8 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * ```
      * @param key The key or list of keys to remove (optional when chaining)
      * @param getOptions Get options (chaining)
-     * @param putOptions Put options
-     * @returns Whether removal was successful
+     * @param putOptions Put options ()
+     * @returns A promise for a boolean whether removal was successful
      * @uses 
      * * KV:
      *   * Base: 1 x delete / key
@@ -188,10 +189,10 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x delete / key
      *   * Chain: 1 x read + 1 x write
      */
-    abstract remove(key: any|any[], putOptions?: PutOptions<T>): boolean;
+    abstract remove(key: any|any[], putOptions?: PutOptions<T>): Promise<boolean>;
   
     /** Chain implementation of remove method */
-    private chainremove(chain: string[], key?: any|any[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): boolean {
+    private async chainremove(chain: string[], key?: any|any[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<boolean> {
         return false;
     }
   
@@ -205,7 +206,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * ```
      * @param getOptions Get options (chaining)
      * @param putOptions Put options
-     * @returns true
+     * @returns A promise for true
      * @uses 
      * * KV:
      *   * Base: 1 x list + 1 x delete / key
@@ -214,16 +215,15 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x delete / key
      *   * Chain: 1 x read + 1 x write
      */
-    abstract removeAll(putOptions: PutOptions<T>): boolean;
+    abstract removeAll(putOptions: PutOptions<T>): Promise<void>;
   
     /** Chain implementation of removeAll method */
-    private chainremoveAll(chain: string[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): boolean {
-        return false;
+    private async chainremoveAll(chain: string[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<void> {
+        
     }
   
     //===============================================================
     //============== KEYS FUNCTIONALITIES ============================
-    // TODO: If options is not provided, call the separate `list()` method, not `list(null)`
     /**
      * Retrieves a list of keys from storage or from the chained object in
      * storage
@@ -233,7 +233,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * ```
      * @param listOptions List options (non-chaining)
      * @param getOptions Get options (chaining)
-     * @returns A list of keys from storage or object
+     * @returns A promise for a key iterator object from storage or object
      * @uses
      * * KV:
      *   * Base: 1 x list
@@ -242,11 +242,11 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x list (charged as 1 x read / 4kB)
      *   * Chaining: 1 x read (just for the one key accessed)
      */
-    abstract keys(listOptions?: ListOptions<T>): {keys: string[], cursor: string, complete: boolean}
+    abstract keys(listOptions?: ListOptions<T>): Promise<{keys: string[], cursor: string, complete: boolean}>;
   
     // `storage.c1.c2.keys(options?)`
     /** Chain implementation of keys method */
-    private chainkeys(chain: string[], getOptions?: GetOptions<T>): {keys: string[], cursor: string, complete: boolean} {
+    private async chainkeys(chain: string[], getOptions?: GetOptions<T>): Promise<{keys: string[], cursor: string, complete: boolean}> {
         return {keys :[], cursor: "", complete: false};
     }
   
@@ -261,7 +261,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * ```
      * @param listOptions List options (non-chaining)
      * @param getOptions Get options (chaining)
-     * @returns A list of keys from storage or object
+     * @returns A promise for an item iterator object from storage or object
      * @uses
      * * KV:
      *   * Base: 1 x list + 1 x read / key
@@ -270,10 +270,10 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x list (charged as 1 x read / 4kB)
      *   * Chaining: 1 x read (just for the one key accessed)
      */
-    abstract items(listOptions?: ListOptions<T>): {items: any, cursor: string, complete: boolean}
+    abstract items(listOptions?: ListOptions<T>): Promise<{items: any, cursor: string, complete: boolean}>;
     
     /** Chain implementation of items method */
-    private chainitems(chain: string[], getOptions?: GetOptions<T>): {items: any, cursor: string, complete: boolean}{
+    private async chainitems(chain: string[], getOptions?: GetOptions<T>): Promise<{items: any, cursor: string, complete: boolean}> {
         return {items: {}, cursor: "", complete: false};
     }
 }

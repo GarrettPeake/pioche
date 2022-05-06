@@ -1,7 +1,6 @@
 import { Session } from "../io/input";
 import { OutboundResponse } from "../io/output";
 import { DurableObjectStore } from "../storage/durableobjectstore";
-import { createStorageProxy } from "../storage/storage";
 import { WorkerController } from "./workercontroller";
 
 
@@ -23,7 +22,7 @@ export abstract class DurableObjectController extends WorkerController{
     constructor(state: any | null, env: any | null){
         super(env);
         this.state = state; // Access to the state object
-        this.storage = createStorageProxy(new DurableObjectStore(state.storage)); // Access to permanent storage
+        this.storage = new DurableObjectStore(state.storage); // Access to permanent storage
         this.addKVBindings();
     }
 

@@ -1,5 +1,4 @@
 import { KVStore } from "../storage/kvstore";
-import { createStorageProxy } from "../storage/storage";
 
 /**
  * Abstract superclass for the different types of resources
@@ -18,7 +17,7 @@ export abstract class WorkerController{
 
     addKVBindings(){
         (this.constructor as any).KVBinds?.entries.forEach(([key, value]) => {
-            this[key] = createStorageProxy(new KVStore(value));
+            this[key] = new KVStore(value);
         });
     }
 }

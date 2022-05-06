@@ -7,6 +7,9 @@ export * from "./checks";
  * Structure definitions are composable (see example)  
  * Supports inline validation of data through checks or booleans
  * booleans denoted whether the property is required, and do not validate
+ * @param val The object to validate against the view
+ * @param view The view class to validate with
+ * @returns An instance of the view class filled with passing values from val or undefined
  * 
  * ```ts
  * class ConfigView{
@@ -36,56 +39,52 @@ export function View<Type>(val: any, view: (new () => Type)): Type{
     } else {
         throw Error("Error creating view, passed view structure must be an object or class");
     }
-    built.__report__ = {
-        status: 0,
-        missing: [],
-        failing: [],
-        extras: []
-    };
+
+    // Create holds for reporting values
+    const missing = [];
+    const failing = [];
+
+    // Apply the view
     Object.entries(built).forEach(([prop, check]) => {
-    if(prop !== "__report__"){ // We don't want to check our report attribute
         if(val.hasOwnProperty(prop)){ // Check if the key exists
             if(typeof check === "boolean" && check){
                 built[prop] = val[prop]; // Just copy the value
             } else if(typeof check === "object" || (check as any).toString()[0] === "c"){ // TODO: This is a hack!
                 const subView = built[prop] = View(val[prop], check as any); // Evaluate the subview
-                // Append access chains to this level's missing, failing, and extra report
-                subView.getMissing().forEach((missing: any) => {
-                    built.__report__.missing.push([prop].concat(missing));
-                });
-                subView.getFailing().forEach((failing: any) => {
-                    built.__report__.failing.push([prop].concat(failing));
-                });
-                subView.getExtras().forEach((extra: any) => {
-                    built.__report__.extra.push([prop].concat(extra));
-                });
+                // Append access chains to this level's missing and failing report
+                missing.concat(subView.getMissing().map((m: any) => [prop].concat(m)));
+                missing.concat(subView.getFailing().map((f: any) => [prop].concat(f)));
             } else { // We are using a ViewCheck function
                 if((check as ViewCheck)(val[prop])){
                     built[prop] = val[prop]; // Replace the check with the found value
                 } else { // val[prop] failed check
-                    built.__report__.failing.push(prop);
+                    failing.push(prop);
                     built[prop] = undefined;
                 }
             }
         } else { // val didn't have prop
             if(!(typeof check === "boolean" && !check)){ // Unless it was optional, note that it's missing
-                built.__report__.missing.push(prop);
+                missing.push(prop);
             }
             built[prop] = undefined;
         }
-    }
     });
 
     // Set the status property
-    if(built.__report__.missing.length || built.__report__.failing.length)
-        built.__report__.status = -1;
-    else if (built.__report__.extras.length)
-        built.__report__.status = 1;
+    let status = 0;
+    if(missing.length || failing.length)
+        status = -1;
+
+    // Create the report
+    built.__report__ = {
+        status: status,
+        missing: missing,
+        failing: failing
+    };
     
     // Add report accessors
     built.getStatus = () => built.__report__.status;
     built.getMissing = () => built.__report__.missing;
     built.getFailing = () => built.__report__.failing;
-    built.getExtras = () => built.__report__.extras;
     return (built as Type);
 }
