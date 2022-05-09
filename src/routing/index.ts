@@ -3,7 +3,7 @@ export * from "./delegator";
 
 import { WorkerController, DurableObjectController } from "../controllers";
 import { OutboundResponse, Session } from "../io";
-import { DOTarget, HTTPMethod, Routing } from "../types";
+import { DOTarget, HTTPMethod, Middleware, Routing } from "../types";
 import { Router } from "./router";
 
 /**
@@ -46,9 +46,11 @@ export function BaseMap(base: string, {host = ":host*", DOBinding = undefined, e
                     throw Error("@BaseMap Decorators on DurableObjectControllers must provide a DOBinding argument");
                 route.DOBinding = DOBinding;
                 
-                // Append host data to each route
+                // Append host to each route
                 route.host = host;
-                route.route = base + route.route; // Don't allow "//" at the beginning
+
+                // Build the full route
+                route.route = base + route.route;
 
                 console.log(`Route ${route.method} ${route.host}...${route.route} -> ${(target as any).name}.${route.propertyKey}`);
             });
@@ -58,34 +60,34 @@ export function BaseMap(base: string, {host = ":host*", DOBinding = undefined, e
 }
 
 // Mapping functions for each type of request
-export function GetMap(route: string, {enabled = true} = {}){
+export function GetMap(route: string, enabled = true){
     return subMap("GET", route, enabled);
 }
-export function HeadMap(route: string, {enabled = true} = {}){
+export function HeadMap(route: string, enabled = true){
     return subMap("HEAD", route, enabled);
 }
-export function PostMap(route: string, {enabled = true} = {}){
+export function PostMap(route: string, enabled = true){
     return subMap("POST", route, enabled);
 }
-export function PutMap(route: string, {enabled = true} = {}){
+export function PutMap(route: string, enabled = true){
     return subMap("PUT", route, enabled);
 }
-export function DeleteMap(route: string, {enabled = true} = {}){
+export function DeleteMap(route: string, enabled = true){
     return subMap("DELETE", route, enabled);
 }
-export function ConnectMap(route: string, {enabled = true} = {}){
+export function ConnectMap(route: string, enabled = true){
     return subMap("CONNECT", route, enabled);
 }
-export function OptionsMap(route: string, {enabled = true} = {}){
+export function OptionsMap(route: string, enabled = true){
     return subMap("OPTIONS", route, enabled);
 }
-export function TraceMap(route: string, {enabled = true} = {}){
+export function TraceMap(route: string, enabled = true){
     return subMap("TRACE", route, enabled);
 }
-export function PatchMap(route: string, {enabled = true} = {}){
+export function PatchMap(route: string, enabled = true){
     return subMap("PATCH", route, enabled);
 }
-export function AnyMap(route: string, {enabled = true} = {}){
+export function AnyMap(route: string, enabled = true){
     return subMap("ANY", route, enabled);
 }
 
@@ -98,5 +100,25 @@ export function TargetDO(
         target.TargetDO = (session: Session, response: OutboundResponse, targetNS: DurableObjectNamespace) => {
             return (typeof targeter === "function") ? targeter(session, response, targetNS) : targeter;
         };
+    };
+}
+
+export function UseBefore(...handlers: Middleware[]){
+    return function (target: WorkerController, propertyKey: string) {
+        if(!(target.constructor as any).handlers)
+            (target.constructor as any).handlers = {};
+        if(!(target.constructor as any).handlers[propertyKey])
+            (target.constructor as any).handlers[propertyKey] = {preHandlers: [], postHandlers: []};
+        (target.constructor as any).handlers[propertyKey].preHandlers.push(...handlers);
+    };
+}
+
+export function UseAfter(...handlers: Middleware[]){
+    return function (target: WorkerController, propertyKey: string) {
+        if(!(target.constructor as any).handlers)
+            (target.constructor as any).handlers = {};
+        if(!(target.constructor as any).handlers[propertyKey])
+            (target.constructor as any).handlers[propertyKey] = {preHandlers: [], postHandlers: []};
+        (target.constructor as any).handlers[propertyKey].postHandlers.push(...handlers);
     };
 }

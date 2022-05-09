@@ -1,3 +1,4 @@
+import { OutboundResponse } from "../io";
 import { Session } from "../io/input";
 import { Router } from "./router";
 
@@ -6,21 +7,24 @@ import { Router } from "./router";
  */
 export const DefaultHandlers = {
     fetch: async (request: Request, env: any) => {
+        // Generate session, response pair
         const session = new Session(request);
-        session.logger.log("REQUEST RECEIVED");
+        const response = new OutboundResponse();
 
-        // Make the environment available to the entire framework
+        // Log entry
+        session.logger.log(`HANDLE: ${session.request.method} ${session.request.url}`);
+
+        // Make env global
         globalThis.env = env;
         
-        // Route request
-        return Router.route(session);
+        // Let our Router route the request
+        return Router.route(session, response);
     },
 
     scheduled: async (event: any, env: any) => {
         DefaultHandlers.fetch(
-            // TODO: ADD INTERNAL PERMS TO REQUEST
             new Request(
-                "https://www.dummy-url.com/cron?trigger=" + event.cron
+                "https://scheduled.io/" + event.cron
             ),
             env
         );

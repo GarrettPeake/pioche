@@ -76,7 +76,7 @@ export class OutboundResponse implements ResponseObject{
     toResponse(): Response{
         /* 
         * **Note to Contributors**: I can't think of any reasons WebSockets can't just receive special
-        * treatment and be sent back like this then bypassing endware. Honestly I just couldn't serialize
+        * treatment and be sent back like this then bypassing subsequent handlers. Honestly I just couldn't serialize
         * them to allow me to send them back. If you can think of a reason not to do this or a way to
         * transmit them, please open an issue
         */

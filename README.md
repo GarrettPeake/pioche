@@ -21,7 +21,7 @@ Note: To use all features of Pioche, you need a Cloudflare account with [Durable
  - [x] Minimized invokations and compute time  
 ## 🔋 Tree Shakeable Batteries Available in [pioche-extras](https://github.com/GarrettPeake/pioche-extras)
 
-See the installation section in [pioche-extras](https://github.com/GarrettPeake/pioche-extras) to add prebuilt OAuth, log streaming, and middleware to your project
+See the installation section of [pioche-extras](https://github.com/GarrettPeake/pioche-extras) for prebuilt OAuth, log streaming, and middleware to use in your project
 
 ## 💾 Installation
 
@@ -37,11 +37,11 @@ export { HelloWorldController } from 'controllers/customcontroller';
 // Import the default handlers from pioche
 import { DefaultHandlers } from 'pioche';
 
-HelloWorldController; // This prevents rollup from purging it as unused code
+HelloWorldController; // This prevents the controller from being treeshaken
 
 export default DefaultHandlers; // Export pioches handlers
 ```
-And we can create said controller as follows
+And we can create said controller as shown
 ```ts
 import { BaseMap, GetMap, DurableObjectController, Session } from "pioche";
 

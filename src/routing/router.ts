@@ -1,5 +1,5 @@
 import { WorkerController } from "../controllers/workercontroller";
-import { DOTarget, Endware, Middleware, Routing } from "../types";
+import { DOTarget, Middleware, Routing } from "../types";
 import { Session } from "../io/input";
 import { DurableObjectController } from "../controllers/durableobjectcontroller";
 import { pathToRegexp } from "path-to-regexp";
@@ -12,15 +12,15 @@ export class Router{
 
     static routes: Routing[] = []; // Method, host, map, Resource, propertyKey
     static bindings: object = {};
-    static middleware: Middleware[] = [];
-    static endware: Endware[] = [];
+    static preHandlers: Middleware[] = [];
+    static postHandlers: Middleware[] = [];
 
-    static useBefore(middleware: Middleware){
-        Router.middleware.push(middleware);
+    static useBefore(...handlers: Middleware[]){
+        Router.preHandlers = Router.preHandlers.concat(handlers);
     }
 
-    static useAfter(endware: Endware){
-        Router.endware.push(endware);
+    static useAfter(...handlers: Middleware[]){
+        Router.postHandlers = Router.postHandlers.concat(handlers);
     }
 
     /**
@@ -34,10 +34,7 @@ export class Router{
         console.log(`Registered ${(target as any).name} means router now has ${Router.routes.length} routes`);
     }
 
-    static async route(session: Session): Promise<any>{
-        // Generate our response object to be passed around
-        let response = new OutboundResponse();
-
+    static async route(session: Session, response: OutboundResponse): Promise<any>{
         // ==== Find the matching route if any ====
         let targetRoute: Routing = undefined;
         for(const route of Router.routes){
@@ -45,7 +42,7 @@ export class Router{
                 console.log("Method match:", route.route);
                 const params = [];
                 const regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step?
-                const parsed = regex.exec(session.request.url.hostname + session.request.pathname); // TODO: We need to check the optional host
+                const parsed = regex.exec(session.request.url.hostname + session.request.pathname);
                 if(parsed){
                     session.request.params = {};
                     params.forEach((p, i) => {
@@ -59,7 +56,13 @@ export class Router{
         }
         if(!targetRoute)
             response.status = 404;
-        // TODO: Enact all middleware on the request
+
+        // ==== Enact preHandlers on the request ====
+        const routePreHandlers = (targetRoute?.controller as any)?.handlers?.preHandlers?.[targetRoute?.propertyKey] || [];
+        const preHandlers = Router.preHandlers.concat(routePreHandlers);
+        preHandlers.forEach((handler) => {
+            handler(session, response);
+        });
     
         // ==== Route the request ====
         if(targetRoute){
@@ -91,7 +94,7 @@ export class Router{
                     })
                 }));
                 // **NOTE TO CONTRIBUTORS**: Read note in DurableObjectController.fetch() for reasoning
-                // We treat websockets specially, bypassing endware
+                // We treat websockets specially, bypassing postHandlers
                 if(resp.status === 101){
                     return resp;
                 }
@@ -106,9 +109,15 @@ export class Router{
                 response = await targetController[targetRoute.propertyKey](session, response);
             }
         }
-        // TODO: Enact all endware on the response, this should be done for 404's
 
-        // Turn whatever data the controller gave us into a response
+        // ==== Enact postHandlers on the request ====
+        const routePostHandlers = (targetRoute?.controller as any)?.handlers?.postHandlers?.[targetRoute?.propertyKey] || [];
+        const postHandlers = Router.postHandlers.concat(routePostHandlers);
+        postHandlers.forEach((handler) => {
+            handler(session, response);
+        });
+
+        // Convert our response object into a real response
         return response.toResponse();
     }
 }

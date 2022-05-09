@@ -1,4 +1,5 @@
 import { WorkerController } from "../controllers/workercontroller";
+import { OutboundResponse } from "../io";
 import { Session } from "../io/input";
 
 /** A type defining the strings that can be used as methods */
@@ -14,9 +15,8 @@ export type HTTPMethod =
     "patch" | "PATCH" |
     "any" | "ANY";
 
-// Types for middleware and endware components
-export type Middleware = (session: Session, next: undefined | Middleware | Endware) => any
-export type Endware =    (session: Session, data: any, next: undefined | Endware) => any
+// Types for middleware handler components
+export type Middleware = (session: Session, response: OutboundResponse) => any
 
 /** Defines a route to a given endpoint */
 export interface Routing {

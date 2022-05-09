@@ -6,8 +6,8 @@ import { KVStore } from "../storage/kvstore";
  */
 export abstract class WorkerController{
 
-    liveLogging = false; // Whether to stream logs or send a post-run "transcript"
-    env: any = {}; // Set by fetch functions on each host
+    protected liveLogging = false; // Whether to stream logs or send a post-run "transcript"
+    protected env: any = {}; // Set by fetch functions on each host
 
     constructor(env: any){
         // Make the environment available to the entire framework
