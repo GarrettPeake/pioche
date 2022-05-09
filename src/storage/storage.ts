@@ -74,6 +74,8 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
     /**
      * Retrieve an object from storage.  
      * NOTE: key/s is optional in chaining signature
+     * NOTE: Chaining will not allow assignment of chars within a string
+     * NOTE: The chain apart from the final key must already exist
      * ```ts
      * storage.get("prop1", getOptions?); // Normal get
      * storage.get(["prop1", "prop2"], getOptions?); // Multi get
@@ -94,7 +96,20 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
   
     /** Chain implementation of get method */
     private async chainget(chain: any[], key?: any|any[], getOptions?: GetOptions<T>): Promise<any> {
-        return false;
+        // Retrieve base
+        let base = await this.get(chain[0], getOptions);
+        // Descend the chain
+        chain.slice(1, chain.length).forEach((k) => {
+            base = base?.[k];
+        });
+        // If we have keys, retrieve them from the end
+        if(key){
+            if(Array.isArray(key))
+                return key.map((k) => base?.[k]);
+            return base?.[key];
+        }
+        // Otherwise just return the base
+        return base;
     }
   
     //===============================================================
@@ -127,7 +142,20 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
   
     /** Chain implementation of put method */
     private async chainput(chain: any[], value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<string>{
-        return "";
+        if(chain.length === 1)
+            return this.put(chain[0], value, putOptions);
+        // Retrieve the base
+        let base = await this.get(chain[0], getOptions);
+        const origin = base;
+        // Descend the chain keeping track of an ancestor
+        chain.slice(1, chain.length - 1).forEach((k) => {
+            base = base?.[k];
+        });
+        // Set the new value
+        const lastKey = chain[chain.length - 1];
+        base[lastKey] = value;
+        // Write the new value back to storage
+        return this.put(chain[0], origin, putOptions);
     }
 
     //===============================================================
@@ -135,6 +163,8 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
     /**
      * Acts like JS spread operator: all (key, value) pairs in value
      * are added to the object at the end of the chain  
+     * Attempting to spread on a value other than an array or object will
+     * throw and error
      * NOTE: must be used with chaining  
      * ```ts
      * storage.prop1.prop2.spread({
@@ -164,7 +194,25 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
     
     /** Chain implementation of spread method */
     private async chainspread(chain: any[], value: any, getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<any>{
-        return false;
+        // Retrieve the base
+        let base = await this.get(chain[0], getOptions);
+        const origin = base;
+        // Descend the chain keeping track of an ancestor
+        chain.slice(1, chain.length - 1).forEach((k) => {
+            base = base?.[k];
+        });
+        // Set the new value
+        const lastKey = chain[chain.length - 1];
+        if(Array.isArray(base[lastKey]))
+            base[lastKey] = [...base[lastKey], ...value];
+        else if(typeof base[lastKey] === "object")
+            base[lastKey] = {...base[lastKey], ...value};
+        else
+            throw new Error("Attempting to spread on value other than object or array");
+        // Write the new value back to storage
+        this.put(chain[0], origin, putOptions);
+        // Return the spread object
+        return origin;
     }
   
     //===============================================================
@@ -179,7 +227,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * ```
      * @param key The key or list of keys to remove (optional when chaining)
      * @param getOptions Get options (chaining)
-     * @param putOptions Put options ()
+     * @param putOptions Put options
      * @returns A promise for a boolean whether removal was successful
      * @uses 
      * * KV:
@@ -193,7 +241,29 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
   
     /** Chain implementation of remove method */
     private async chainremove(chain: string[], key?: any|any[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<boolean> {
-        return false;
+        if(chain.length === 1 && key === undefined)
+            return this.remove(key, putOptions);
+        // Retrieve the base
+        let base = await this.get(chain[0], getOptions);
+        const origin = base;
+        // Descend the chain
+        chain.slice(1, chain.length - 1).forEach((k) => {
+            base = base?.[k];
+        });
+        // Remove the value/s
+        const lastKey = chain[chain.length - 1];
+        if(key !== undefined){
+            if(chain.length > 1) // Don't reuse the first key
+                base = base?.[lastKey];
+            ([].concat(key)).forEach((k: string) => {
+                delete base[k];
+            });
+        } else {
+            delete base[lastKey];
+        }
+        // Write the new value back to storage
+        this.put(chain[0], origin, putOptions);
+        return true;
     }
   
     //===============================================================
@@ -219,7 +289,24 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
   
     /** Chain implementation of removeAll method */
     private async chainremoveAll(chain: string[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<void> {
-        
+        // Retrieve the base
+        let base = await this.get(chain[0], getOptions);
+        const origin = base;
+        // Descend the chain
+        chain.slice(1, chain.length).forEach((k) => {
+            base = base?.[k];
+        });
+        // Remove the value/s
+        if(Array.isArray(base))
+            base.length = 0;
+        else if (typeof base === "object"){
+            for (const member in base)
+                delete base[member];
+        } else {
+            throw new Error("Attempting to use removeAll on non object");
+        }
+        // Write the new value back to storage
+        this.put(chain[0], origin, putOptions);
     }
   
     //===============================================================
@@ -247,7 +334,18 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
     // `storage.c1.c2.keys(options?)`
     /** Chain implementation of keys method */
     private async chainkeys(chain: string[], getOptions?: GetOptions<T>): Promise<{keys: string[], cursor: string, complete: boolean}> {
-        return {keys :[], cursor: "", complete: false};
+        // Retrieve the base
+        let base = await this.get(chain[0], getOptions);
+        // Descend the chain
+        chain.slice(1, chain.length).forEach((k) => {
+            base = base?.[k];
+        });
+        // Retrieve the keys
+        if(typeof base === "object"){
+            const keys = Object.keys(base);
+            return {keys: keys, cursor: keys[keys.length-1], complete: true};
+        } else
+            throw new Error("Attempting to use keys on non object");
     }
   
     //===============================================================
@@ -274,6 +372,17 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
     
     /** Chain implementation of items method */
     private async chainitems(chain: string[], getOptions?: GetOptions<T>): Promise<{items: any, cursor: string, complete: boolean}> {
-        return {items: {}, cursor: "", complete: false};
+        // Retrieve the base
+        let base = await this.get(chain[0], getOptions);
+        // Descend the chain
+        chain.slice(1, chain.length).forEach((k) => {
+            base = base?.[k];
+        });
+        // Retrieve the items
+        if(typeof base === "object"){
+            const entries = Object.entries(base);
+            return {items: entries, cursor: entries[entries.length-1][0], complete: true};
+        } else
+            throw new Error("Attempting to use items on non object");
     }
 }
