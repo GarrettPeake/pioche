@@ -1,21 +1,27 @@
- <div>
- <p align="center">
-  <a href="https://github.com/GarrettPeake/pioche" title="View Project Source"><img width="375" src="https://github.com/GarrettPeake/pioche/blob/master/readme_logo.png" /></a>
- </p>
+<div>
+  <p align="center">
+    <a href="https://github.com/GarrettPeake/pioche" title="View Project Source">
+      <img width="375" src="https://github.com/GarrettPeake/pioche/blob/master/readme_logo.png" />
+    </a>
+  </p>
  
- <div align="center">
-  <p>**PIOCHE IS A WORK IN PROGRESS AND DOES NOT YET FUNCTION**</p><p>TypeScript first framework for <a href='https://workers.cloudflare.com'>Cloudflare Workers</a> enabling ⚡lightning⚡ fast development and execution</p>
-</div>
-<a href="https://www.npmjs.com/package/pioche"><img src="https://badgen.net/npm/v/pioche?color=blue" alt="npm version"></a>
+  <div align="center">
+    <p>**PIOCHE IS IN ALPHA AND SHOULD NOT BE USED IN PRODUCTION**</p>
+    <p>TypeScript first framework for <a href='https://workers.cloudflare.com'>Cloudflare Workers</a> enabling ⚡lightning⚡ fast development and execution</p>
+  </div>
+
+  <a href="https://www.npmjs.com/package/pioche">
+    <img src="https://badgen.net/npm/v/pioche?color=blue" alt="npm version">
+  </a>
 </div>
 
-Note: To use all features of Pioche, you need a Cloudflare account with [Durable Objects access](https://developers.cloudflare.com/workers/learning/using-durable-objects/#using-durable-objects-1)
+Note: To use Durable Objects and Websockets features of Pioche, you need a Cloudflare account with [Durable Objects access](https://developers.cloudflare.com/workers/learning/using-durable-objects/#using-durable-objects-1)
 
 ## ⭐ Features
  - [x] Short development time
  - [x] Decorator-based path-to-regexp router
- - [ ] Middleware support
- - [ ] Simplified, more powerful API for D/O Storage and KV  
+ - [x] Middleware support
+ - [x] Simplified, more powerful API for D/O Storage and KV  
  - [x] Simplified Worker -> D/O interaction
  - [x] WebSocket handling
  - [x] Minimized invokations and compute time  

@@ -27,10 +27,10 @@ export default [
       replace({
         "process.env.NODE_ENV": JSON.stringify("production")
       }),
-      nodePolyfills(),
       resolve({
         browser: true
       }),
+      nodePolyfills(),
       typescript({ tsconfig: "./tsconfig.json" })
     ],
   },
