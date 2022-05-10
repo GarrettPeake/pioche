@@ -3,7 +3,7 @@ import { ResponseObject } from "../types";
 
 export class OutboundResponse implements ResponseObject{
 
-    private _status: number;
+    private _status = 200;
     headers: Headers;
     body: any;
     websocket: WebSocket;
@@ -65,12 +65,6 @@ export class OutboundResponse implements ResponseObject{
     /**
      * Attempt to convert `data` to a response  
      * Objects using **only** reserved keys will be transformed into the corresponding response  
-     * * `status`  
-     * * `body`  
-     * * `headers`  
-     * * `websocket`  
-     * 
-     * Response objects will not be transformed  
      * Any type of other data will be placed in the body with a 200 code
      */
     toResponse(): Response{

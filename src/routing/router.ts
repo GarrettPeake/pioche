@@ -39,7 +39,6 @@ export class Router{
         let targetRoute: Routing = undefined;
         for(const route of Router.routes){
             if(route.method === session.request.method || route.method === "ANY"){
-                console.log("Method match:", route.route);
                 const params = [];
                 const regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step?
                 const parsed = regex.exec(session.request.url.hostname + session.request.pathname);
@@ -106,7 +105,7 @@ export class Router{
                 const targetController = new (targetRoute.controller as any).constructor(globalThis.env);
                 session.logger.live = targetController.liveLogging;
                 targetController.addKVBindings();
-                response = await targetController[targetRoute.propertyKey](session, response);
+                await targetController[targetRoute.propertyKey](session, response);
             }
         }
 
