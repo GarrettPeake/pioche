@@ -1,6 +1,5 @@
 // We might define some way to access metadata like keys will be a dict with key: metadata
 
-import { randomUUID } from "crypto";
 import { StorageElement } from "./storage";
 
 /**
@@ -30,7 +29,7 @@ export class KVStore extends StorageElement<KVNamespace>{
     
     async put(key: string, value: any, putOptions?: KVNamespacePutOptions): Promise<string> {
         if(!key)
-            key = randomUUID();
+            key = crypto.randomUUID();
         await this.element.put(key, JSON.stringify({original: value}), putOptions);
         return key;
     }

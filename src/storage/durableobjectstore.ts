@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { StorageElement } from "./storage";
 
 /**
@@ -19,7 +18,7 @@ export class DurableObjectStore extends StorageElement<DurableObjectStorage>{
 
     async put(key: string, value: any, putOptions?: DurableObjectPutOptions) {
         if(!key)
-            key = randomUUID();
+            key = crypto.randomUUID();
         await this.element.put(key, value, putOptions);
         return key;
     }
