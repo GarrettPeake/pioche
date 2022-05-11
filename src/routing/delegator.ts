@@ -12,7 +12,8 @@ export const DefaultHandlers = {
         const response = new OutboundResponse();
 
         // Log entry
-        session.logger.log(`HANDLE: ${session.request.method} ${session.request.url}`);
+        console.log("=================================================================");
+        session.logger.log(`Received: ${session.request.method} ${session.request.url}`);
 
         // Make env global
         globalThis.env = env;

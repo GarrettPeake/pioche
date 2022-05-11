@@ -118,6 +118,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      * Put a (key, value) pair into storage or use chaining to put at depth  
      * NOTE: chaining signature is `.put(value, getOptions?, putOptions?)`  
      * NOTE: Setting key to undefined will generate a UUID
+     * NOTE: A subsequent chain operation on the same key may overwrite previous
      * ```ts
      * storage.put("prop1", "val", putOptions?); // Basic put operation
      * storage.put(undefined, "val", putOptions?); // Generates a UUID
@@ -285,7 +286,7 @@ export abstract class StorageElement<T extends DurableObjectStorage | KVNamespac
      *   * Base: 1 x delete / key
      *   * Chain: 1 x read + 1 x write
      */
-    abstract removeAll(putOptions: PutOptions<T>): Promise<void>;
+    abstract removeAll(putOptions?: PutOptions<T>): Promise<void>;
   
     /** Chain implementation of removeAll method */
     private async chainremoveAll(chain: string[], getOptions?: GetOptions<T>, putOptions?: PutOptions<T>): Promise<void> {

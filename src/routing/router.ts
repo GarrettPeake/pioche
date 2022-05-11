@@ -34,27 +34,46 @@ export class Router{
         console.log(`Registered ${(target as any).name} means router now has ${Router.routes.length} routes`);
     }
 
+    /**
+     * Routes the session, response pair
+     * @param session The session object
+     * @param response The response object
+     * @returns A valid response object
+     */
     static async route(session: Session, response: OutboundResponse): Promise<any>{
         // ==== Find the matching route if any ====
         let targetRoute: Routing = undefined;
+        const currentRoute = session.request.host + session.request.pathname;
+        console.log("Checking known routes against:", currentRoute);
         for(const route of Router.routes){
+            console.log("  Route:", route.method, route.route);
             if(route.method === session.request.method || route.method === "ANY"){
+                console.log("    ☑️ Method");
                 const params = [];
                 const regex = pathToRegexp(route.host + route.route, params); // TODO: Can we precompile regexps during build step?
-                const parsed = regex.exec(session.request.url.hostname + session.request.pathname);
+                let parsed = [];
+                try{
+                    parsed = regex.exec(currentRoute);
+                }catch{}
                 if(parsed){
+                    console.log("    ☑️ Route");
                     session.request.params = {};
                     params.forEach((p, i) => {
                         session.request.params[p.name] = parsed[i+1];
                     });
-                    console.log(`Matched ${route.host}${route.route} route with params: `, JSON.stringify(session.request.params));
+                    console.log("    ➡️ Routing with Params:", 
+                        Object.entries(session.request.params)
+                            .filter(([k]) => k!=="host")
+                            .map(([k, v]) => `${k}=${v}`).join(", "));
                     targetRoute = route;
                     break;
                 }
             }
         }
-        if(!targetRoute)
+        if(!targetRoute){
+            console.log("No matching route found");
             response.status = 404;
+        }
 
         // ==== Enact preHandlers on the request ====
         const routePreHandlers = (targetRoute?.controller as any)?.handlers?.preHandlers?.[targetRoute?.propertyKey] || [];

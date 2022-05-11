@@ -11,8 +11,8 @@ import { WorkerController } from "./workercontroller";
  */
 export abstract class DurableObjectController extends WorkerController{
 
-    storage: any;
-    state: DurableObjectState;
+    protected storage: DurableObjectStore;
+    protected state: DurableObjectState;
 
     /**
      * Default constructor for remote durable objects
@@ -26,7 +26,7 @@ export abstract class DurableObjectController extends WorkerController{
         this.addKVBindings();
         (this as any).onCreate?.(state, env);
     }
-
+    
     async fetch(request: Request){
         // Generate the (session, response) pair
         const json: any = await request.json();

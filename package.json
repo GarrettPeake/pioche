@@ -1,6 +1,6 @@
 {
   "name": "pioche",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Pickaxe in french, get it? Workers, durable objects, pickaxe...",
   "author": "[Garrett Peake](https://github.com/GarrettPeake)",
   "homepage": "https://github.com/GarrettPeake/pioche",
@@ -17,7 +17,6 @@
   "license": "MIT",
   "scripts": {
     "build": "npm install && npx rollup -c",
-    "watch": "npx tsc -w",
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "npmpublish": "npm run build && npm publish"

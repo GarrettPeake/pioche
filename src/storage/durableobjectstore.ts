@@ -27,7 +27,7 @@ export class DurableObjectStore extends StorageElement<DurableObjectStorage>{
         return await this.element.delete(key, putOptions);
     }
 
-    async removeAll(putOptions: DurableObjectPutOptions): Promise<void> {
+    async removeAll(putOptions?: DurableObjectPutOptions): Promise<void> {
         return await this.element.deleteAll(putOptions);
     }
 
@@ -38,7 +38,7 @@ export class DurableObjectStore extends StorageElement<DurableObjectStorage>{
         });
         return {
             keys,
-            complete: !(listOptions.limit && keys.length < listOptions.limit),
+            complete: !(listOptions?.limit && keys.length < listOptions?.limit),
             cursor: keys[keys.length - 1]
         };
     }
@@ -46,12 +46,12 @@ export class DurableObjectStore extends StorageElement<DurableObjectStorage>{
     async items(listOptions?: DurableObjectListOptions): Promise<{ items: any; cursor: string; complete: boolean; }> {
         const items = [];
         (await this.element.list(listOptions)).forEach((k: any, v: any) => {
-            items.push([k, v]);
+            items.push([v, k]);
         });
         return {
             items,
-            complete: !(listOptions.limit && items.length < listOptions.limit),
-            cursor: items[items.length - 1][0]
+            complete: !(listOptions?.limit && items.length < listOptions?.limit),
+            cursor: items?.[items.length - 1]?.[0] || ""
         };
     }
 }
