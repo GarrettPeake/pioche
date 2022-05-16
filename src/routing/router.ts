@@ -71,7 +71,7 @@ export class Router{
             }
         }
         if(!targetRoute){
-            console.log("No matching route found");
+            console.log("No matching route found, setting 404");
             response.status = 404;
         }
 

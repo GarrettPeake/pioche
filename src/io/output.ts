@@ -63,9 +63,8 @@ export class OutboundResponse implements ResponseObject{
     }
 
     /**
-     * Attempt to convert `data` to a response  
-     * Objects using **only** reserved keys will be transformed into the corresponding response  
-     * Any type of other data will be placed in the body with a 200 code
+     * Generate a response based on the set properties
+     * of this object
      */
     toResponse(): Response{
         /* 
