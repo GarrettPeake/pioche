@@ -21,6 +21,6 @@
             "node"
         ]
     },
-    "include": ["src"],
+    "include": ["scripts", "src"],
     "exclude": ["node_modules", "dist", "test"]
 }
