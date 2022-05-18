@@ -4,9 +4,7 @@ import dts from "rollup-plugin-dts";
 import nodePolyfills from "rollup-plugin-node-polyfills";
 import replace from "@rollup/plugin-replace";
 import shebang from "rollup-plugin-preserve-shebang";
-import cleanup from "rollup-plugin-cleanup";
 import del from "rollup-plugin-delete";
-import cleanAfter from "rollup-plugin-clean-after";
 
 const packageDec = require("./package.json");
 
@@ -36,6 +34,13 @@ export default [
     ],
   },
   {
+    input: "dist/esm/types/src/index.d.ts",
+    output: [{ file: packageDec.types, format: "esm" }],
+    plugins: [
+      dts(),
+    ],
+  },
+  {
     input: "scripts/pioche.ts",
     output: [
       {
@@ -50,17 +55,6 @@ export default [
       nodePolyfills(),
       typescript({ tsconfig: "./tsconfig.json" }),
       shebang(),
-      cleanup({lineEndings: "unix", include: "scripts/pioche.js"})
     ]
-  },
-  {
-    input: "dist/esm/types/src/index.d.ts",
-    output: [{ file: packageDec.types, format: "esm" }],
-    plugins: [
-      dts(),
-      cleanAfter({ targets: [
-        "dist/esm/types", "dist/cjs/types", "dist/scripts/types"
-      ]})
-    ],
-  },
+  }
 ];
