@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-import  process from "process";
-import { createPiocheApp } from "./init";
-import { buildPiocheApp } from "./build";
+
+const process = require("process");
+const createPiocheApp = require("./init.js");
+const buildPiocheApp = require("./build.js");
+
 
 class Loggy {
 
@@ -22,49 +24,60 @@ class Loggy {
             cyan: "\x1b[46m"
         }
     };
+    current;
 
-    log(text?: string){
+    log(text){
         this.stream.write((text || "") + "\n");
     }
 
-    begin(text: string){ // Write to console without newline
-        this.stream.write(" > " + text);
+    begin(text){ // Write to console without newline
+        this.current = text;
+        this.stream.write(" >  " + text);
     }
 
-    fail(text: string){ // Rewrite line as ERROR:text with red background
+    fail(text){ // Rewrite line as ERROR:text with red background
         this.stream.cursorTo(0);
         this.stream.clearLine(1);
         this.stream.write(this.color(` ❌ ERROR: ${text}`, this.c.fg.red) + "\n");
     }
 
-    info(text: string){ // Rewrite line as INFO:text with yellow text
+    info(text){ // Rewrite line as INFO:text with yellow text
         this.stream.cursorTo(0);
         this.stream.clearLine(1);
-        this.stream.write(this.color(` ✅ INFO: ${text}`, this.c.fg.yellow) + "\n");
+        this.stream.write(this.color(` 🔔 INFO: ${text}`, this.c.fg.yellow) + "\n");
     }
 
     finish(){ // Write a checkmark and then add the newline
         this.stream.cursorTo(0);
-        this.stream.write(" ✅\n");
+        this.stream.clearLine(1);
+        this.stream.write(" ✔️  " + this.current + "\n");
     }
 
-    bgerror(text: string){ // Write ERROR:text in red background
+    bgerror(text){ // Write ERROR:text in red background
         this.stream.write(this.color(`ERROR: ${text}`, this.c.bg.red) + "\n");
     }
 
-    fgerror(text: string){ // Write ERROR:text in red text
+    fgerror(text){ // Write ERROR:text in red text
         this.stream.write(this.color(`ERROR: ${text}`, this.c.fg.red) + "\n");
     }
 
-    fglog(input: string, color: string){
+    fglog(input, color){
         this.stream.write(this.color(input, this.c.fg[color]) + "\n");
     }
 
-    bglog(input: string, color: string){
+    bglog(input, color){
         this.stream.write(this.color(input, this.c.bg[color]) + "\n");
     }
 
-    color(input: string, color: string){
+    fgwrite(input, color){
+        this.stream.write(this.color(input, this.c.fg[color]));
+    }
+
+    bgwrite(input, color){
+        this.stream.write(this.color(input, this.c.bg[color]));
+    }
+
+    color(input, color){
         return `${color}${input}\x1b[0m`;
     }
 }

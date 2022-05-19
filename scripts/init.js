@@ -8,7 +8,7 @@ const fs = require("fs");
  * npm install
  * wrangler login
  */
-export function createPiocheApp(logger, dirName){
+module.exports = function(logger, dirName){
     if(dirName){
         logger.fglog(`== Creating new Pioche app ${dirName} ==`, "green");
         logger.log("Setting up project files");
@@ -38,7 +38,7 @@ export function createPiocheApp(logger, dirName){
             logger.begin("Configuring package.json");
             const packageJson = JSON.parse(fs.readFileSync("./package.json"));
             if(!packageJson){
-                logger.fail("Could not find package.json");
+                logger.fail("Unable to locate package.json");
                 return;
             }
             
@@ -77,4 +77,4 @@ export function createPiocheApp(logger, dirName){
     } else {
         logger.fgerror("Project name not provided");
     }
-}
+};
