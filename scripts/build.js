@@ -17,65 +17,120 @@ function rmTempDir(){
 }
 
 module.exports = async function(logger){
-    logger.fglog("== Building pioche app ==", "green");
+    // Disable console log
+    const cslog = console.log;
+    console.log = ()=>{};
 
-    // Create a temporary build directory
-    makeTempDir();
-
-    // Ensure we're in the base directory by checking for package.json
     try{
-        require(path.join(path.relative(__dirname, cwd), "package.json"));
-    } catch {
-        logger.fgerror("Run build command in project directory");
-        return;
+        logger.fglog("== Building pioche app ==", "green");
+
+
+        // Create a temporary build directory
+        makeTempDir();
+
+        // Ensure we're in the base directory by checking for package.json
+        try{
+            require(path.join(path.relative(__dirname, cwd), "package.json"));
+        } catch {
+            logger.fgerror("Run build command in project directory");
+            return;
+        }
+
+        // Build the pioche.config.js/ts using esbuild
+        buildConfig(logger);
+
+        // Retrieve config
+        let config = await getConfig(logger);
+        if(!config){
+            config = createDefaultConfig(logger);
+            buildConfig();
+        }
+        if(config === -1) return;
+
+        // Retrieve config imports
+        const tbimports = await getConfigImports(logger);
+
+        // Retrieve dotenv
+        const dotenv = getDotenv(logger) || createDefaultDotenv(logger);
+
+        // Discover all controllers
+        const controllers = await discoverControllers(logger);
+        if(Object.entries({...controllers.workers, ... controllers.durable_objects}).length === 0
+            && config.extControllers?.length === 0){
+            logger.fgerror("No controllers specified, stopping build");
+            return;
+        }
+
+        // Find external controllers
+        const extControllers = await checkExternalControllers(logger, config.extControllers);
+
+        // Retrieve wrangler.toml
+        const wranglerToml = getWranglerToml(logger) || {};
+        if(wranglerToml === -1) return;
+
+        // Update our wrangler.toml file
+        await updateWranglerToml(logger, wranglerToml, config, dotenv, controllers, extControllers);
+
+        // Generate our entry file
+        generateEntry(logger, config, controllers, extControllers, tbimports);
+
+    }catch (e){
+        console.error(e);
     }
-
-    // Retrieve config
-    const config = await getConfig(logger) || createDefaultConfig(logger);
-    if(config === -1) return;
-
-    // Retrieve config imports
-    const tbimports = await getConfigImports(logger);
-
-    // Retrieve dotenv
-    const dotenv = getDotenv(logger) || createDefaultDotenv(logger);
-
-    // Discover all controllers
-    const controllers = await discoverControllers(logger);
-    if(Object.entries({...controllers.workers, ... controllers.durable_objects}).length === 0
-        && config.extControllers?.length === 0){
-        logger.fgerror("No controllers specified, stopping build");
-        return;
-    }
-
-    // Find external controllers
-    const extControllers = await checkExternalControllers(logger, config.extControllers);
-
-    // Retrieve wrangler.toml
-    const wranglerToml = getWranglerToml(logger);
-    if(wranglerToml === -1) return;
-
-    // Update our wrangler.toml file
-    updateWranglerToml(logger, wranglerToml, config, dotenv, controllers, extControllers);
-
-    // Generate our entry file
-    generateEntry(logger, config, controllers, extControllers, tbimports);
+    // Reenable console log
+    console.log = cslog;
 
     // Delete our temp directory if it exists
     rmTempDir();
+
 };
 
+function buildConfig(){
+    // Generate both regular and bundles
+    if(fs.existsSync(path.join(cwd, "pioche.config.js"))){
+        esbuild.buildSync({
+            entryPoints: ["pioche.config.js"],
+            outfile: path.join(cwd, "piochetemp/pioche.config.mjs"),
+            logLevel: "silent",
+            format: "esm"
+        });
+        esbuild.buildSync({
+            entryPoints: ["pioche.config.js"],
+            outfile: path.join(cwd, "piochetemp/pioche.config.bundle.mjs"),
+            logLevel: "silent",
+            bundle: true,
+            format: "esm"
+        });
+    }
+    if(fs.existsSync(path.join(cwd, "pioche.config.ts"))){
+        esbuild.buildSync({
+            entryPoints: ["pioche.config.ts"],
+            outfile: path.join(cwd, "piochetemp/pioche.config.mjs"),
+            logLevel: "silent",
+            format: "esm"
+        });
+        esbuild.buildSync({
+            entryPoints: ["pioche.config.ts"],
+            outfile: path.join(cwd, "piochetemp/pioche.config.bundle.mjs"),
+            logLevel: "silent",
+            bundle: true,
+            format: "esm"
+        });
+    }
+    return 1;
+}
+
 async function getConfig(logger){
-    logger.begin("Opening pioche.config.js from cwd");
+    logger.begin("Opening pioche config");
     try{
         const config = await import(
-            path.join(path.relative(__dirname, cwd), "pioche.config.js")
+            path.join(path.relative(__dirname, cwd), "piochetemp/pioche.config.bundle.mjs")
         ).then((m) => m.default);
-        // TODO: Add all potential controllers here
         logger.finish();
         return config;
     } catch (e) {
-        if(fs.existsSync(path.join(cwd, "pioche.config.js"))){
+        if(fs.existsSync(path.join(cwd, "pioche.config.js")) ||
+        fs.existsSync(path.join(cwd, "pioche.config.ts"))){
             logger.fail("Unable to parse pioche.config.js");
             console.log(e);
             return -1;
@@ -86,7 +141,7 @@ async function getConfig(logger){
 }
 
 function createDefaultConfig(logger) {
-    logger.begin("Generating new pioche.config.js");
+    logger.begin("Creating default pioche config file");
     const defConfig = {
         extControllers: [],
         prehandlers: [],
@@ -102,18 +157,15 @@ function createDefaultConfig(logger) {
         "export default " +
         JSON.stringify(defConfig, undefined, 4).replaceAll("\"", "");
     // Write the file
-    fs.writeFileSync(path.join(cwd, "/pioche.config.js"), contents);
+    fs.writeFileSync(path.join(cwd, "/pioche.config.ts"), contents);
     logger.finish();
     return defConfig;
 }
 
-/**
- * Return a list of  
- */
 async function checkExternalControllers(logger, extControllers){
-    logger.begin("Discovering imported DO controllers");
+    logger.begin("Sorting imported DO controllers");
     const controllers = {workers: [], durable_objects: []};
-    for(const value of extControllers){
+    for(const value of extControllers || []){
         checkPotentialController(value, (name) => {
             controllers.durable_objects.push(name);
         }, (name) => {
@@ -127,23 +179,29 @@ async function checkExternalControllers(logger, extControllers){
 async function getConfigImports(logger){
     logger.begin("Copying imports from pioche.config.js");
     // Use es-build to flatten everything
-    await esbuild.build({
-        entryPoints: ["pioche.config.js"],
-        outfile: "piochetemp/config.js",
-    });
+    const contents = fs.readFileSync(path.join(cwd, "piochetemp/pioche.config.mjs"), "utf8");
     // Find the export default statement
-    const contents = fs.readFileSync(path.join(cwd, "piochetemp/config.js"), "utf8");
-    const start = contents.indexOf("export default");
-    let end = start;
-    let brackets = 0;
-    [...contents.slice(start)].forEach((c, i) => {
-        brackets += c === "{" ? 1 : (c === "}" ? -1 : 0);
-        if(brackets === 0){
-            end = start + i;
+    const importreqs = [];
+    let start = undefined;
+    // Find all import statements
+    // Import statements start with "import" and end with ;
+    // ; is guaranteed due to esbuild!
+    [...contents].forEach((c, i) => {
+        if(contents.slice(i, i+6) === "import"){
+            start = i;
+        }
+        if(c === ";" && start !== undefined){
+            importreqs.push(contents.slice(start, i+1));
+            start = undefined;
         }
     });
     logger.finish();
-    return (contents.slice(0,start) + contents.slice(end)).trim();
+    // Warn for the use of require statements
+    contents.split("\n").forEach((lin) => {
+        if(lin.includes(" require("))
+            logger.fgerror("Use of require() statements not currently allowed");
+    });
+    return importreqs;
 }
 
 function getDotenv(logger){
@@ -247,9 +305,9 @@ function getWranglerToml(logger){
 /**
  * Creates an updated wrangler.toml with migrations, bindings, and build command set
  * @param contents Contents of the original wrangler.toml
- * @param config pioche.config.js config file
+ * @param config pioche.config config file
  */
-function updateWranglerToml(logger, contents, config, dotenv, controllers, extControllers){
+async function updateWranglerToml(logger, contents, config, dotenv, controllers, extControllers){
     logger.begin("Generating wrangler.toml");
     const header =
         "# =============================================================================\n" +
@@ -261,7 +319,7 @@ function updateWranglerToml(logger, contents, config, dotenv, controllers, extCo
 
     // Set kv_namespaces to our kv_namespaces
     contents.kv_namespaces = [];
-    Object.entries(config.kv_namespaces).forEach(([binding, id]) => {
+    Object.entries(config.kv_namespaces || []).forEach(([binding, id]) => {
         contents.kv_namespaces.push({binding: binding, id: id});
     });
 
@@ -286,9 +344,42 @@ function updateWranglerToml(logger, contents, config, dotenv, controllers, extCo
     // Set the build command
     contents.build = {
         command: "npm run build",
-        cwd: "build_cwd",
+        cwd: "./",
         watch_dir: "src",
     };
+
+    // Set the entry point
+    contents.main = "src/entry.ts";
+    // Set but don't override the name, workers_dev, minify, & compat date
+    if(!contents.name) contents.name = path.relative(path.join(cwd, ".."), cwd);
+    if(contents.workers_dev === undefined) contents.workers_dev = true;
+    if(contents.minify === undefined) contents.minify = true;
+    const datestr = (new Date()).toISOString().slice(0, 10);
+    if(!contents.compatibility_date) contents.compatibility_date = datestr;
+    // Node compat is require
+    contents.node_compat = true;
+
+    // Prompt for account_id, allow non-entry
+    if(!contents.account_id){
+        const readline = require("readline").createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        let lockres = undefined;
+        const lock = new Promise((resolve)=>{lockres = resolve;});
+        readline.question("  > Enter CF account_id or enter to skip: ", aid => {
+            if(aid) contents.account_id = aid;
+            readline.close();
+            lockres();
+        });
+        //await lock;
+        logger.fgwrite("\033[1A"); // Move the stdin cursor back up one line
+    }
+
+    // Don't write out empty arrays
+    if(!contents.kv_namespaces.length) delete contents.kv_namespaces;
+    if(!contents.migrations.length) delete contents.migrations;
+    if(!contents.durable_objects.bindings.length) delete contents.durable_objects;
 
     // Write out the new file
     const tomlOutputString = header + toml.stringify(contents);
@@ -298,25 +389,60 @@ function updateWranglerToml(logger, contents, config, dotenv, controllers, extCo
 
 function generateEntry(logger, config, controllers, extControllers, tbimports){
     logger.begin("Generating entry file");
-    const header =
+    let contents = "";
+    contents +=
         "// ===================================================\n" +
         "// Created automatically, edits won't have any effect\n" +
         "// ===================================================\n\n" +
-        "import { DefaultHandlers } from \"pioche\";\n" +
-        tbimports;
+        "import { DefaultHandlers, Router } from \"pioche\";\n\n";
+    
+    
+    // Bring in imports from pioche.config
+    if(tbimports.length){
+        contents += "// The following were brought in from pioche.config.ts/js\n" +
+            tbimports.join("\n").replaceAll("src/", "") + "\n\n";
+    }
 
-    const footer = "export default DefaultHandlers;\n";
-    // TODO: WE could just copy the import statements from the config file
-    let entryContents = "";
+    // Use our compiled controller list to bring in local controllers
+    contents += "// Import all discovered controllers\n" + [
+        ...Object.entries(controllers.workers),
+        ...Object.entries(controllers.durable_objects)
+    ].map(([name, loc]) => {
+        const extlen = path.extname(loc).length;
+        return `import { ${name} } from "./${loc.slice(0, loc.length - extlen)}"`;
+    }).join(";\n") + ";\n\n";
+
+    // List all controllers to avoid tree shaking
+    contents += "// Listing controllers prevents them from being tree-shaken\n" + [
+        ...Object.entries(controllers.workers).map(([n])=>n),
+        ...Object.entries(controllers.durable_objects).map(([n])=>n),
+        ...extControllers.workers,
+        ...extControllers.durable_objects
+    ].join(";\n") + ";\n\n";
+
+    // Router.useBefore all of the prehandlers
+    if(config.prehandlers.length){
+        contents += "// Add all configged prehandlers to the Router\n" + 
+        config.prehandlers?.map(
+            (ph) => `Router.useBefore(${ph.name})`
+        ).join(";\n") + ";\n\n";
+    }
+    
+    // Router.useAfter all of the posthandlers
+    if(config.posthandlers.length){
+        contents += "// Add all configged postHandlers to the Router\n" + 
+        config.posthandlers.map(
+            (ph) => `Router.useAfter(${ph.name})`
+        ).join(";\n") + ";\n\n";
+    }
+
+    contents += "export default DefaultHandlers;\n";
     // Write the file
-    fs.writeFileSync(path.join(cwd, "src/entry.ts"),  header + entryContents + footer);
+    fs.writeFileSync(path.join(cwd, "src/entry.ts"), contents);
     logger.finish();
 }
 
 async function getExports(filename, logger){
-    // Disable console logs for cleaner output
-    const clog = console.log;
-    console.log = () => {};
     let exports;
     // If ts we'll need to transpile it before checking for exports
     if([".ts", ".cts", ".mts", ".tsx"].includes(path.extname(filename))){
@@ -347,7 +473,5 @@ async function getExports(filename, logger){
             logger.fglog(" > failed", "red");
         }
     }
-    // Re-enable console.log()
-    console.log = clog;
     return exports;
 }
