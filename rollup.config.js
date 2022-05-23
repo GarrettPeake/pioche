@@ -4,7 +4,6 @@ import dts from "rollup-plugin-dts";
 import nodePolyfills from "rollup-plugin-node-polyfills";
 import replace from "@rollup/plugin-replace";
 import del from "rollup-plugin-delete";
-import copy from "rollup-plugin-copy-watch";
 
 const packageDec = require("./package.json");
 
@@ -37,13 +36,7 @@ export default [
     input: "dist/esm/types/index.d.ts",
     output: [{ file: packageDec.types, format: "esm" }],
     plugins: [
-      dts(),
-      copy({
-        watch: "scripts/**",
-        targets: [
-          { src: "scripts", dest: "dist/" }
-        ]
-      })
+      dts()
     ],
   }
 ];
