@@ -11,7 +11,7 @@ import { OutboundResponse } from "../io/output";
 export class Router{
 
     static routes: Routing[] = []; // Method, host, map, Resource, propertyKey
-    static bindings: object = {};
+    static bindings: [any, string][] = [];
     static preHandlers: Middleware[] = [];
     static postHandlers: Middleware[] = [];
 
@@ -21,6 +21,10 @@ export class Router{
 
     static useAfter(...handlers: Middleware[]){
         Router.postHandlers = Router.postHandlers.concat(handlers);
+    }
+
+    static setBindings(binds: [any, string][]){
+        Router.bindings = binds;
     }
 
     /**
@@ -87,8 +91,11 @@ export class Router{
             // Route the request to Durable Object if needed
             if(targetRoute.controller instanceof DurableObjectController){
                 // Gather the DO namespace we're targeting
-                const targetNS = (globalThis.env[targetRoute.DOBinding] as DurableObjectNamespace);
-                // Gather DEV
+                const targetBinding = Router.bindings.filter(([e]) =>
+                    targetRoute.controller.constructor["name"] === e.name
+                )[0][1];
+                const targetNS = (globalThis.env[targetBinding] as DurableObjectNamespace);
+                // Gather dev specified target
                 const targetDO: DOTarget = (targetRoute.controller as any).TargetDO?.(session, response, targetNS);
                 // Base target the default id
                 let targetID = targetNS.idFromName("default");

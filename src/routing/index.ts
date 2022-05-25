@@ -34,18 +34,12 @@ function subMap(method: HTTPMethod, route: string, enabled: boolean) { // Decora
  * Decorator for controller base mapping with optional host parameter
  * @param base Base route for all methods within the controller
  * @param host Optional route declaration for implementing subdomain routing
- * @param DOBinding Optional binding used for DurableObjectControllers
  * @param enabled Optioanl parameter allowing for controller Mappings to be disabled
  */
-export function BaseMap(base: string, {host = ":host", DOBinding = undefined, enabled = true} = {}) {
+export function BaseMap(base: string, {host = ":host", enabled = true} = {}) {
     return function (target: any) {
         if(target.routes && enabled){
-            target.routes.forEach((route: Routing) => {
-                // Assert bindings were provided for DurableObjectControllers
-                if(route.controller instanceof DurableObjectController && !DOBinding)
-                    throw Error("@BaseMap Decorators on DurableObjectControllers must provide a DOBinding argument");
-                route.DOBinding = DOBinding;
-                
+            target.routes.forEach((route: Routing) => {                
                 // Append host to each route
                 route.host = host;
 

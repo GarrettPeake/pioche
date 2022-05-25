@@ -31,35 +31,19 @@ See the installation section of [pioche-extras](https://github.com/GarrettPeake/
 
 ## 💾 Installation
 
-To install just run
+To get started use [pioche-scripts](https://github.com/GarrettPeake/pioche-scripts)
 ```
-npm install pioche
+npx pioche-scripts create <AppName>
 ```
-Then to create a program you'll need a main file as follows
-```ts
-import { HelloWorldController } from 'controllers/customcontroller';
-// If the controller is a durable object we need to export it
-export { HelloWorldController } from 'controllers/customcontroller';
-// Import the default handlers from pioche
-import { DefaultHandlers } from 'pioche';
-
-HelloWorldController; // This prevents the controller from being treeshaken
-
-export default DefaultHandlers; // Export pioches handlers
+This will setup an minimal project with a single TypeScript file: helloworld.ts  
+We can then make changes to functionality and run
+```js
+npm run build // Generate wrangler.toml and program entry point
+npm run dev // Deploy to Cloudflare with remote debugging session
+npm run serve // Run locally, debug locally
+npm run deploy // Deploy to Cloudflare
 ```
-And we can create said controller as shown
-```ts
-import { BaseMap, GetMap, DurableObjectController, Session } from "pioche";
-
-@BaseMap("/hello") //
-export class HelloWorldController extends DurableObjectController{
-  @GetMap("/:name")
-  async helloWorld(session: Session){
-    return `Hello, ${session.request.params.name}!`
-  }
-}
-```
-After deploying this to Cloudflare, example.workers.dev/hello/Greg will return: `Hello, Greg!`
+After `npm run deploy` you should see `<AppName>.workers.dev` gives `Hello, World!`
 
 ## 📕 Background and why Pioche Exists
 

@@ -25,7 +25,6 @@ export interface Routing {
     route: string;
     controller: WorkerController;
     propertyKey: string;
-    DOBinding?: string;
 }
 
 /** Defines a target durable object */
