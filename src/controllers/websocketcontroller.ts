@@ -75,6 +75,7 @@ export abstract class WebsocketController extends DurableObjectController {
         session.websocket.socket.addEventListener("message", async (msg: any) => {
             if(!session.websocket.initialized){
                 try{
+                    (this as any).onSocketInit(session, msg.data);
                     if(session.websocket.tQueue){
                         session.websocket.tQueue.forEach((queued) => {
                             session.websocket.socket.send(queued);

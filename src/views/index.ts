@@ -71,9 +71,9 @@ export function View<Type>(val: any, view: (new () => Type)): Type{
     });
 
     // Set the status property
-    let status = 0;
+    let status = 1;
     if(missing.length || failing.length)
-        status = -1;
+        status = 0;
 
     // Create the report
     built.__report__ = {

@@ -14,7 +14,7 @@ export class Session {
         ended: false,
         rQueue: [],
         tQueue: [],
-        config: {},
+        config: ({} as any),
         startTime: Date.now()
     };
 
