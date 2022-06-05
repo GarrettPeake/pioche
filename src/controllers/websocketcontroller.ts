@@ -35,8 +35,15 @@ export abstract class WebsocketController extends DurableObjectController {
      */
     async closeSession(session: Session){
         session.logger.close(); // Close logger
-        session.websocket.socket.close(1011, "WebSocket broken"); // Close websocket
+        const closeHook = !session.websocket.ended;
         session.websocket.ended = true;
+        if(closeHook)
+            (this as any).onSessionClose(session);
+        try{
+            session.websocket.socket.close(1011, "WebSocket broken"); // Close websocket
+        } catch (e) {
+            session.log("Attempt to close failed, websocket already closed");
+        }
         this.sessions = this.sessions.filter((member) => member !== session); // Purge session
     }
 
@@ -51,18 +58,27 @@ export abstract class WebsocketController extends DurableObjectController {
         }
 
         // Iterate over all the sessions sending them messages or removing them
-        this.sessions.forEach((session) => {
-            if(this.receiveBroadcast(session, message)){
-                try {
-                    session.websocket.socket.send(message);
-                } catch (err) {
-                    if(session.websocket.initialized)
-                        this.closeSession(session);
-                    else{
-                        session.websocket.tQueue.push(message);
+        console.log("Broadcasting message", message);
+        this.sessions.forEach(async (session: Session) => {
+            const trySend = async (session: Session) => {
+                if(this.receiveBroadcast(session, message)){
+                    try {
+                        session.websocket.socket.send(message);
+                    } catch (err) {
+                        if(session.websocket.initialized){
+                            session.log("Broadcast failed, closing session");
+                            await this.closeSession(session);
+                        }else{
+                            session.log("Broadcast failed, queuing message");
+                            session.websocket.tQueue.push(message);
+                        }
                     }
                 }
-            }
+            };
+            await trySend(session).catch(err => {
+                session.log("Error during brodcast");
+                session.log(err);
+            });
         });
     }
 
@@ -75,18 +91,27 @@ export abstract class WebsocketController extends DurableObjectController {
         session.websocket.socket.addEventListener("message", async (msg: any) => {
             if(!session.websocket.initialized){
                 try{
-                    (this as any).onSocketInit(session, msg.data);
                     if(session.websocket.tQueue){
                         session.websocket.tQueue.forEach((queued) => {
+                            if (typeof queued !== "string") {
+                                queued = JSON.stringify(queued);
+                            }
                             session.websocket.socket.send(queued);
                         });
                         session.websocket.tQueue = [];
                     }
-                }catch{
+                }catch (e){
+                    session.log("Websocket init failed, closing socket");
                     session.websocket.socket.send(
                         JSON.stringify({ message: "An error occurred during initialization" })
                     );
                     this.closeSession(session);
+                }
+                try{
+                    (this as any).onSocketInit(session, msg.data);
+                } catch (e){
+                    session.log("onSocketInit failed");
+                    session.log(e);
                 }
                 session.websocket.initialized = true;
             }

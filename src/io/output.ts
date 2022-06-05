@@ -73,12 +73,17 @@ export class OutboundResponse implements ResponseObject{
         * them to allow me to send them back. If you can think of a reason not to do this or a way to
         * transmit them, please open an issue
         */
-        if(this.websocket)
+        if(this.websocket){
             return new Response(null, { status: 101, webSocket: this.websocket });
+        }
         // Construct a response based on the rest of our data
-        return new Response(this.body ? 
-            (typeof this.body === "object" ? JSON.stringify(this.body) : this.body.toString())
-            : "", this);
+        return new Response(
+            (typeof this.body === "object" ? JSON.stringify(this.body) : (this.body || "").toString()),
+            {
+                headers: this.headers,
+                status: this.status
+            }
+        );
     }
 
     /**

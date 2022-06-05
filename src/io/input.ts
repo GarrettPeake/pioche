@@ -59,7 +59,7 @@ export class InboundRequest {
     readonly url: URL = undefined; // DONE
     readonly host: string = undefined;
     readonly pathname: string = undefined;
-    readonly query: any = undefined;
+    public query: any = undefined;
     public params: any = undefined;
     readonly headers: Headers = undefined;
     private cache_body: string = undefined;

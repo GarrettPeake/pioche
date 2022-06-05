@@ -96,7 +96,7 @@ export class Router{
                 )[0][1];
                 const targetNS = (globalThis.env[targetBinding] as DurableObjectNamespace);
                 // Gather dev specified target
-                const targetDO: DOTarget = (targetRoute.controller as any).TargetDO?.(session, response, targetNS);
+                const targetDO: DOTarget = (targetRoute.controller.constructor as any).TargetDO?.(session, response, targetNS);
                 // Base target the default id
                 let targetID = targetNS.idFromName("default");
                 // If we received targeting info use it
@@ -110,14 +110,21 @@ export class Router{
                 // Construct the DO stub to call upon
                 const remoteObject = targetNS.get(targetID);
                 // Serialize (session, response) and append the targeted controller method
-                const resp: Response = await remoteObject.fetch(new Request("https://www.dummy-url.com", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        target: targetRoute.propertyKey,
-                        session: await session.toJSON(),
-                        response: response.toJSON()
-                    })
-                }));
+                // Websocket requests don't transfer the body, therefore we must replicate
+                // params and queryParams in the URL
+                const crossURL = new URL("https://www.regular.com/" + targetRoute.propertyKey);
+                crossURL.searchParams.append("params", JSON.stringify(session.request.params));
+                crossURL.searchParams.append("query", JSON.stringify(session.request.query));
+                const resp: Response = await remoteObject.fetch(
+                    new Request(crossURL, {
+                            method: "POST",
+                            headers: session.request.headers,
+                            body: JSON.stringify({
+                                session: await session.toJSON(),
+                                response: response.toJSON()
+                            })
+                        }
+                ));
                 // **NOTE TO CONTRIBUTORS**: Read note in DurableObjectController.fetch() for reasoning
                 // We treat websockets specially, bypassing postHandlers
                 if(resp.status === 101){

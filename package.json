@@ -1,10 +1,12 @@
 {
   "name": "pioche",
-  "version": "0.8.3",
+  "version": "0.8.8",
   "description": "Pickaxe in french, get it? Workers, durable objects, pickaxe...",
   "author": "[Garrett Peake](https://github.com/GarrettPeake)",
   "homepage": "https://github.com/GarrettPeake/pioche",
-  "files": [ "dist" ],
+  "files": [
+    "dist"
+  ],
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
   "types": "dist/index.d.ts",
@@ -30,16 +32,16 @@
   ],
   "devDependencies": {
     "@cloudflare/workers-types": "^3.4.0",
+    "@rollup/plugin-node-resolve": "^13.2.1",
+    "@rollup/plugin-replace": "^4.0.0",
+    "@rollup/plugin-typescript": "^8.3.2",
     "@types/jest": "^27.4.1",
     "@types/node": "^17.0.24",
-    "@rollup/plugin-node-resolve": "^13.2.1",
-    "@rollup/plugin-typescript": "^8.3.2",
-    "rollup-plugin-dts": "^4.2.1",
-    "rollup-plugin-node-polyfills": "^0.2.1",
-    "@rollup/plugin-replace": "^4.0.0",
-    "rollup-plugin-delete": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
+    "rollup-plugin-delete": "^2.0.0",
+    "rollup-plugin-dts": "^4.2.1",
+    "rollup-plugin-node-polyfills": "^0.2.1",
     "ts-jest": "^27.1.3",
     "tslib": "^2.3.1"
   },

@@ -92,7 +92,7 @@ export function TargetDO(
     return (target: any) => {
         // Add the targeter as a static property of the class
         target.TargetDO = (session: Session, response: OutboundResponse, targetNS: DurableObjectNamespace) => {
-            return (typeof targeter === "function") ? targeter(session, response, targetNS) : targeter;
+            return (typeof targeter === "function") ? (targeter as any)(session, response, targetNS) : targeter;
         };
     };
 }

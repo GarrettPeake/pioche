@@ -28,20 +28,34 @@ export abstract class DurableObjectController extends WorkerController{
     }
     
     async fetch(request: Request){
-        // Generate the (session, response) pair
-        const json: any = await request.json();
-        const session = new Session(json.session);
+        // A durable object can only respond with a websocket to a cross environment request with
+        // The "Upgrade: websocket" header. A fetch request specifying said header cannot have a body
+        // Thus websocket endpoints will not see the results of preHandlers
+        // Given that a websocket also cannot be serialized, it has special handling upon return also
+        // This means that websocket endpoints will not pass through postHandlers.
+        let session: Session;
+        let response: OutboundResponse;
+        if (request.headers.get("upgrade") === "websocket"){
+            session = new Session(request);
+            session.request.params = JSON.parse(session.request.query.params);
+            session.request.query = JSON.parse(session.request.query.query);
+            response = new OutboundResponse();
+        } else {
+            const json: any = await request.json();
+            session = new Session(json.session);
+            response = new OutboundResponse(json.response);
+        }
         session.logger.live = this.liveLogging;
-        const response = new OutboundResponse(json.response);
+        const target = session.request.pathname.slice(1);
 
         // Call lifecycle hook
         (this as any).onRequest?.(session, response);
 
         // Log Entry into the DO
-        console.log(`=== DO Executing ${this.constructor.name}.${json.target} ===`);
+        console.log(`=== DO Executing ${this.constructor.name}.${target} ===`);
         
         // Execute the method on the DO and save the response
-        await this[json.target](session, response);
+        await this[target](session, response);
         
         // Log exit of DO
         console.log("=== DO Execution Finished ===");
@@ -49,6 +63,8 @@ export abstract class DurableObjectController extends WorkerController{
         // Exit the logger gracefully if this is the end of the session
         if(!response.websocket)
             session.logger.close();
+        else
+            return new Response(null, { status: 101, webSocket: response.websocket });
 
         return new Response(JSON.stringify({
             session: await session.toJSON(),
